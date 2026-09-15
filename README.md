@@ -1,6 +1,6 @@
 # kasten-alerting
 
-Alerts on Kasten K10 action failures (and any other outcome you care
+Alerts on Veeam Kasten action failures (and any other outcome you care
 about) by email - BackupAction, RestoreAction, ExportAction, RunAction, and
 every other action kind Kasten exposes.
 
@@ -71,9 +71,6 @@ helm upgrade --install kasten-alerting ./helm/kasten-alerting \
   --namespace kasten-alerting --create-namespace \
   --set storageClass=<your-storage-class> \
   --set timezone=Europe/Paris
-
-kubectl -n kasten-alerting get svc kasten-alerting
-# open http://<EXTERNAL-IP>
 ```
 
 - `storageClass` is required - must already exist in your cluster
@@ -102,9 +99,6 @@ helm upgrade --install kasten-alerting ./helm/kasten-alerting \
   --set timezone=Europe/Paris \
   --set service.type=ClusterIP \
   --set route.enabled=true
-
-oc -n kasten-alerting get route kasten-alerting
-# open https://<HOST-FROM-ABOVE>
 ```
 
 - `route.host` pins a specific hostname (`--set
@@ -164,9 +158,7 @@ wide. `create`+`patch` because saving the password goes through `kubectl
 apply` (create on the first save, patch on every one after); `delete` is
 for clearing it from the Settings page. The password itself is
 write-only end to end: the API never returns it once saved, only whether
-one is currently set (`has_password`) - same pattern as
-[cpouthier/malware-scan](https://github.com/cpouthier/malware-scan)'s own
-SMTP alerting.
+one is currently set (`has_password`).
 
 Nothing else is granted - no access to Pods, logs, ConfigMaps, or any
 other resource. Unlike malware-scan (which restores data into scratch
@@ -174,14 +166,3 @@ namespaces and runs scanner pods), this app only ever reads Kasten action
 objects and manages its own Secret.
 
 ---
-
-## Local development
-
-```bash
-cd app
-pip install -r requirements.txt
-DATA_DIR=/tmp/kasten-alerting-data uvicorn main:app --reload
-```
-
-Needs `kubectl` on PATH and a working `KUBECONFIG` pointed at a cluster
-with Kasten installed - there's no mock mode.
