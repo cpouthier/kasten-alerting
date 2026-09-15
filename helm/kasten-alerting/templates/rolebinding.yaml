@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kasten-alerting
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kasten-alerting.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: kasten-alerting
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: kasten-alerting
+  apiGroup: rbac.authorization.k8s.io

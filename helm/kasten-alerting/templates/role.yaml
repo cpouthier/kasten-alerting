@@ -1,0 +1,17 @@
+# Namespaced, unlike clusterrole.yaml - this app only ever reads/writes its
+# own SMTP password Secret (kasten-alerting-smtp, see app/k10.py/alerting.py),
+# always in its own namespace, so there's no reason for this to be a
+# cluster-wide grant on every Secret in every namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kasten-alerting
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kasten-alerting.labels" . | nindent 4 }}
+rules:
+  # "patch" because re-applying an existing Secret goes through PATCH, not
+  # POST (see app/k10.py's create_secret).
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "patch", "delete"]

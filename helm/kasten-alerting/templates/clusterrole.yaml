@@ -30,9 +30,7 @@ rules:
       - upgradeactions
       - validateactions
     verbs: ["get", "list"]
-  # SMTP password Secret, same pattern as malware-scan's own SMTP alerting -
-  # "patch" because re-applying an existing Secret goes through PATCH, not
-  # POST (see app/k10.py's create_secret).
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list", "watch", "create", "patch", "delete"]
+  # Secrets are NOT here - this app only ever touches its own SMTP password
+  # Secret, in its own namespace, so that's a namespaced Role instead (see
+  # role.yaml/rolebinding.yaml), not a cluster-wide grant on every Secret
+  # in every namespace like this ClusterRole would otherwise mean.
