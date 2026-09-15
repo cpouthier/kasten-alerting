@@ -64,8 +64,8 @@ body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,'Open Sans',Roboto,
   padding-left:16px;border-left:1px solid rgba(255,255,255,.12);}
 .topbar-controls{display:flex;align-items:center;gap:10px;padding-left:16px;border-left:1px solid rgba(255,255,255,.12);}
 .icon-btn{background:transparent;border:1px solid rgba(255,255,255,.22);color:#dce6ea;border-radius:3px;
-  width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
-.icon-btn:hover{background:rgba(255,255,255,.1);}
+  width:28px;height:28px;padding:0;margin:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.icon-btn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.22);}
 .icon-btn svg{width:15px;height:15px;}
 .icon-btn .icon-moon{display:none;}
 :root[data-theme="dark"] .icon-btn .icon-sun{display:none;}
