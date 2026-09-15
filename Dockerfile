@@ -5,9 +5,12 @@ ARG TARGETARCH
 # kubectl AND oc - k10.py picks whichever one matches the cluster this app
 # is actually running against at runtime (oc on OpenShift, kubectl
 # everywhere else - see k10._kubectl_binary), same pattern as
-# cpouthier/malware-scan's own Dockerfile.
+# cpouthier/malware-scan's own Dockerfile. tzdata: python:3.12-slim doesn't
+# ship the IANA timezone database, so zoneinfo.ZoneInfo(...) would raise
+# ZoneInfoNotFoundError for anything but "UTC" without this - see
+# app/tz.py and the chart's `timezone` value.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      curl ca-certificates && \
+      curl ca-certificates tzdata && \
     curl -fsSL "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/${TARGETARCH}/kubectl" \
       -o /usr/local/bin/kubectl && \
     chmod +x /usr/local/bin/kubectl && \

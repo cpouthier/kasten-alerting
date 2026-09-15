@@ -26,6 +26,12 @@ spec:
         - name: kasten-alerting
           image: {{ include "kasten-alerting.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            # Kasten's own timestamps are always UTC - this is what makes
+            # the digest email and History tab read in the cluster's own
+            # wall-clock time instead (see app/tz.py).
+            - name: TZ
+              value: {{ .Values.timezone | quote }}
           ports:
             - containerPort: 8000
           volumeMounts:

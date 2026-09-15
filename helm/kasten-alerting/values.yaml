@@ -23,6 +23,13 @@ nodeName: ""
 data:
   size: 1Gi
 
+# IANA timezone name (e.g. "Europe/Paris") the digest email and the
+# History tab display timestamps in - Kasten's own timestamps are always
+# UTC regardless of where the cluster physically runs (see app/tz.py), so
+# this is what makes a digest read in the cluster's own wall-clock time
+# instead. Defaults to UTC, same as leaving it unset.
+timezone: "UTC"
+
 service:
   type: LoadBalancer
   port: 80

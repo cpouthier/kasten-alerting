@@ -13,6 +13,7 @@ import smtplib
 from email.message import EmailMessage
 
 import k10
+import tz
 
 logger = logging.getLogger("kasten-alerting.alerting")
 
@@ -114,7 +115,7 @@ def _build_digest_text(items: list[dict]) -> str:
         lines.append(f"  Namespace: {item['namespace'] or 'n/a'}")
         if item["policy_name"]:
             lines.append(f"  Policy: {item['policy_name']}")
-        lines.append(f"  When: {item['timestamp'] or 'unknown'}")
+        lines.append(f"  When: {tz.format_local(item['timestamp']) or 'unknown'}")
         if item["error_lines"]:
             lines.append("  Log:")
             lines.extend(f"    {ln}" for ln in item["error_lines"])
@@ -134,7 +135,7 @@ def _build_digest_html(items: list[dict]) -> str:
           <td style="padding:8px 10px;border-bottom:1px solid {_BORDER};font-size:12px;color:{_TEXT};font-family:ui-monospace,Consolas,monospace;">{html.escape(item['name'] or '')}</td>
           <td style="padding:8px 10px;border-bottom:1px solid {_BORDER};font-size:12px;color:{_MUTED};">{html.escape(item['policy_name'] or '—')}</td>
           <td style="padding:8px 10px;border-bottom:1px solid {_BORDER};font-size:12px;color:{_MUTED};font-family:ui-monospace,Consolas,monospace;">{html.escape(item['namespace'] or '—')}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid {_BORDER};font-size:11px;color:{_MUTED};white-space:nowrap;">{html.escape(item['timestamp'] or '')}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid {_BORDER};font-size:11px;color:{_MUTED};white-space:nowrap;">{html.escape(tz.format_local(item['timestamp']))}</td>
         </tr>""" for item in items)
 
     parts = [f"""

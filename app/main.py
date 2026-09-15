@@ -16,6 +16,7 @@ import db
 import k10
 import poller
 import settings
+import tz
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("kasten-alerting")
@@ -134,7 +135,10 @@ async def api_poll_now():
 
 @app.get("/api/digests")
 def api_list_digests():
-    return db.list_digests()
+    # sent_at is stored as UTC (see db.py/poller.py) - converted to
+    # DISPLAY_TZ here, at the API boundary, same as alerting.py does for
+    # the email itself. Raw UTC stays canonical in the database.
+    return [{**d, "sent_at": tz.format_local(d["sent_at"])} for d in db.list_digests()]
 
 
 @app.get("/api/digests/{digest_id}")
@@ -142,6 +146,8 @@ def api_get_digest(digest_id: str):
     digest = db.get_digest(digest_id)
     if digest is None:
         raise HTTPException(status_code=404, detail="digest not found")
+    digest["sent_at"] = tz.format_local(digest["sent_at"])
+    digest["items"] = [{**item, "timestamp": tz.format_local(item["timestamp"])} for item in digest["items"]]
     return digest
 
 

@@ -326,10 +326,6 @@ function renderStatuses(statuses, selected) {
   `).join('');
 }
 
-function fmtDate(iso) {
-  try { return new Date(iso).toLocaleString(); } catch { return iso; }
-}
-
 async function loadSettings() {
   const statuses = await (await fetch('/api/statuses')).json();
   currentSettings = await (await fetch('/api/settings')).json();
@@ -464,7 +460,7 @@ async function loadDigests() {
     const tr = document.createElement('tr');
     tr.className = 'digest-row';
     tr.innerHTML = `
-      <td>${fmtDate(d.sent_at)}</td>
+      <td>${d.sent_at}</td>
       <td>${d.item_count}</td>
       <td>${d.email_error ? `<span class="pill Failed">Send failed</span>` : `<span class="pill Complete">Sent</span>`}</td>
     `;
@@ -491,7 +487,7 @@ async function loadDigests() {
               <span class="pill ${item.state}">${item.state}</span>
               <span class="name">${item.kind} ${item.name}</span>
             </div>
-            <div class="meta">Namespace: ${item.namespace || '—'} ${item.policy_name ? `&middot; Policy: ${item.policy_name}` : ''} &middot; ${fmtDate(item.timestamp)}</div>
+            <div class="meta">Namespace: ${item.namespace || '—'} ${item.policy_name ? `&middot; Policy: ${item.policy_name}` : ''} &middot; ${item.timestamp}</div>
             ${item.error_lines && item.error_lines.length ? `<div class="log">${item.error_lines.map(l => l.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))).join('\n')}</div>` : ''}
           </div>
         `).join('');
