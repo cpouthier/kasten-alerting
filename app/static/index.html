@@ -60,6 +60,8 @@ body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,'Open Sans',Roboto,
 .topbar .brand .product{font-size:.94rem;font-weight:600;letter-spacing:.01em;}
 .topbar .brand .suite{font-size:.66rem;text-transform:uppercase;letter-spacing:.11em;color:#8fa3af;font-weight:600;}
 .topbar .spacer{flex:1}
+.topbar .clock{font-size:.72rem;color:#9fb2be;text-align:right;line-height:1.35;
+  padding-left:16px;border-left:1px solid rgba(255,255,255,.12);}
 .topbar-controls{display:flex;align-items:center;gap:10px;padding-left:16px;border-left:1px solid rgba(255,255,255,.12);}
 .icon-btn{background:transparent;border:1px solid rgba(255,255,255,.22);color:#dce6ea;border-radius:3px;
   width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
@@ -68,6 +70,10 @@ body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,'Open Sans',Roboto,
 .icon-btn .icon-moon{display:none;}
 :root[data-theme="dark"] .icon-btn .icon-sun{display:none;}
 :root[data-theme="dark"] .icon-btn .icon-moon{display:block;}
+#lang-select{background:transparent;border:1px solid rgba(255,255,255,.22);color:#dce6ea;
+  width:auto;height:28px;padding:0 8px;font-size:.74rem;font-weight:600;border-radius:3px;}
+#lang-select:focus{box-shadow:none;border-color:rgba(255,255,255,.4);}
+#lang-select option{color:#1c2b33;}
 
 .tabs{display:flex;gap:2px;background:var(--card);border-bottom:1px solid var(--border);padding:0 26px;flex-shrink:0;}
 .tab{padding:12px 16px;font-size:.83rem;font-weight:600;color:var(--muted);cursor:pointer;
@@ -161,12 +167,20 @@ td.mono{font-family:ui-monospace,'Cascadia Mono','Consolas',monospace;font-size:
     </div>
     <div class="titles">
       <div class="product">kasten-alerting</div>
-      <div class="suite">Action Monitoring</div>
+      <div class="suite" data-i18n="topbar.suite">Action Monitoring</div>
     </div>
   </div>
   <div class="spacer"></div>
+  <div class="clock" id="clock"></div>
   <div class="topbar-controls">
-    <button class="icon-btn" id="theme-toggle-btn" type="button" title="Toggle dark mode">
+    <select id="lang-select" title="Language">
+      <option value="en">EN</option>
+      <option value="fr">FR</option>
+      <option value="de">DE</option>
+      <option value="it">IT</option>
+      <option value="es">ES</option>
+    </select>
+    <button class="icon-btn" id="theme-toggle-btn" type="button" data-i18n-title="topbar.toggleTheme" title="Toggle dark mode">
       <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
         <circle cx="8" cy="8" r="3.1"/><path d="M8 1.3v1.6M8 13.1v1.6M2.6 8H1M15 8h-1.6M3.5 3.5l1.1 1.1M11.4 11.4l1.1 1.1M12.5 3.5l-1.1 1.1M4.6 11.4l-1.1 1.1"/>
       </svg>
@@ -178,84 +192,84 @@ td.mono{font-family:ui-monospace,'Cascadia Mono','Consolas',monospace;font-size:
 </div>
 
 <div class="tabs">
-  <div class="tab active" data-page="settings">Settings</div>
-  <div class="tab" data-page="history">History</div>
+  <div class="tab active" data-page="settings" data-i18n="tabs.settings">Settings</div>
+  <div class="tab" data-page="history" data-i18n="tabs.history">History</div>
 </div>
 
 <div class="content">
 <div class="page active" id="page-settings">
   <div class="pagehead">
-    <h1 class="pagetitle">Alerting settings</h1>
-    <p class="pagesub">Polls Kasten action objects on a timer (there's no real-time watch support for these - see README) and emails a digest whenever new ones finish in a status you've selected below.</p>
+    <h1 class="pagetitle" data-i18n="settings.title">Alerting settings</h1>
+    <p class="pagesub" data-i18n="settings.subtitle">Polls Kasten action objects on a timer (there's no real-time watch support for these - see README) and emails a digest whenever new ones finish in a status you've selected below.</p>
   </div>
 
   <div class="card">
-    <h2>Monitoring</h2>
+    <h2 data-i18n="settings.monitoring.title">Monitoring</h2>
     <div class="toggle-row">
       <input type="checkbox" id="enabled-checkbox">
-      <label style="margin:0;" for="enabled-checkbox">Enabled</label>
+      <label style="margin:0;" for="enabled-checkbox" data-i18n="settings.monitoring.enabled">Enabled</label>
     </div>
 
-    <label>Action kinds to monitor</label>
+    <label data-i18n="settings.monitoring.actionKinds">Action kinds to monitor</label>
     <div class="checkbox-grid" id="action-kinds-grid"></div>
 
-    <label>Alert on status</label>
+    <label data-i18n="settings.monitoring.statuses">Alert on status</label>
     <div class="status-checkboxes" id="statuses-grid"></div>
 
-    <label for="excluded-policies">Excluded policies (comma-separated policy names, never alerted on)</label>
-    <input type="text" id="excluded-policies" placeholder="e.g. k10-disaster-recovery-policy">
+    <label for="excluded-policies" data-i18n="settings.monitoring.excludedPolicies">Excluded policies (comma-separated policy names, never alerted on)</label>
+    <input type="text" id="excluded-policies" data-i18n-placeholder="settings.monitoring.excludedPoliciesPlaceholder" placeholder="e.g. k10-disaster-recovery-policy">
 
-    <label for="poll-interval">Check every (seconds, minimum 60)</label>
+    <label for="poll-interval" data-i18n="settings.monitoring.interval">Check every (seconds, minimum 60)</label>
     <input type="number" id="poll-interval" min="60" step="30" value="300">
 
     <div style="display:flex;gap:8px;align-items:center;">
-      <button id="save-monitoring-btn">Save</button>
-      <button class="secondary" id="poll-now-btn" type="button">Check now</button>
+      <button id="save-monitoring-btn" data-i18n="settings.save">Save</button>
+      <button class="secondary" id="poll-now-btn" type="button" data-i18n="settings.monitoring.checkNow">Check now</button>
     </div>
     <div class="hint" id="monitoring-error" style="display:none;"></div>
     <div class="hint ok" id="monitoring-status" style="display:none;"></div>
   </div>
 
   <div class="card">
-    <h2>Email (SMTP)</h2>
+    <h2 data-i18n="settings.smtp.title">Email (SMTP)</h2>
     <div class="field-grid">
       <div>
-        <label for="smtp-host">SMTP host</label>
+        <label for="smtp-host" data-i18n="settings.smtp.host">SMTP host</label>
         <input type="text" id="smtp-host" placeholder="smtp.example.com">
       </div>
       <div>
-        <label for="smtp-port">Port</label>
+        <label for="smtp-port" data-i18n="settings.smtp.port">Port</label>
         <input type="number" id="smtp-port" value="587">
       </div>
     </div>
     <div class="field-grid">
       <div>
-        <label for="smtp-security">Security</label>
+        <label for="smtp-security" data-i18n="settings.smtp.security">Security</label>
         <select id="smtp-security">
           <option value="starttls">STARTTLS</option>
           <option value="ssl">SSL/TLS</option>
-          <option value="none">None</option>
+          <option value="none" data-i18n="settings.smtp.securityNone">None</option>
         </select>
       </div>
       <div>
-        <label for="smtp-username">Username (optional)</label>
-        <input type="text" id="smtp-username" placeholder="leave blank for no auth">
+        <label for="smtp-username" data-i18n="settings.smtp.username">Username (optional)</label>
+        <input type="text" id="smtp-username" data-i18n-placeholder="settings.smtp.usernamePlaceholder" placeholder="leave blank for no auth">
       </div>
     </div>
 
-    <label for="smtp-password">Password</label>
+    <label for="smtp-password" data-i18n="settings.smtp.password">Password</label>
     <input type="password" id="smtp-password" placeholder="">
     <div class="hint muted" id="password-status"></div>
 
-    <label for="from-address">From address</label>
+    <label for="from-address" data-i18n="settings.smtp.from">From address</label>
     <input type="text" id="from-address" placeholder="kasten-alerting@example.com">
 
-    <label for="to-addresses">Recipients (comma-separated)</label>
+    <label for="to-addresses" data-i18n="settings.smtp.recipients">Recipients (comma-separated)</label>
     <input type="text" id="to-addresses" placeholder="ops@example.com, oncall@example.com">
 
     <div style="display:flex;gap:8px;align-items:center;">
-      <button id="save-smtp-btn">Save</button>
-      <button class="secondary" id="test-email-btn" type="button">Send test email</button>
+      <button id="save-smtp-btn" data-i18n="settings.save">Save</button>
+      <button class="secondary" id="test-email-btn" type="button" data-i18n="settings.smtp.testEmail">Send test email</button>
     </div>
     <div class="hint" id="smtp-error" style="display:none;"></div>
     <div class="hint ok" id="smtp-status" style="display:none;"></div>
@@ -264,14 +278,14 @@ td.mono{font-family:ui-monospace,'Cascadia Mono','Consolas',monospace;font-size:
 
 <div class="page" id="page-history">
   <div class="pagehead">
-    <h1 class="pagetitle">Alert history</h1>
-    <p class="pagesub">One row per digest email actually sent. Click a row to see every action it covered.</p>
+    <h1 class="pagetitle" data-i18n="history.title">Alert history</h1>
+    <p class="pagesub" data-i18n="history.subtitle">One row per digest email actually sent. Click a row to see every action it covered.</p>
   </div>
   <div class="card">
-    <div id="digests-empty">No alerts sent yet.</div>
+    <div id="digests-empty" data-i18n="history.empty">No alerts sent yet.</div>
     <div class="table-wrap">
       <table id="digests-table" style="display:none;">
-        <thead><tr><th>Sent at</th><th>Actions</th><th>Status</th></tr></thead>
+        <thead><tr><th data-i18n="history.table.sentAt">Sent at</th><th data-i18n="history.table.actions">Actions</th><th data-i18n="history.table.status">Status</th></tr></thead>
         <tbody id="digests-body"></tbody>
       </table>
     </div>
@@ -293,6 +307,189 @@ document.getElementById('theme-toggle-btn').addEventListener('click', () => {
   applyTheme(next);
 });
 applyTheme(localStorage.getItem(THEME_KEY) || 'system');
+
+function tickClock() {
+  const now = new Date();
+  document.getElementById('clock').innerHTML =
+    `${t('topbar.serverTime')}<br>${now.toLocaleDateString()}, ${now.toLocaleTimeString()}`;
+}
+
+// ── i18n ──────────────────────────────────────────────────────────────────
+// Kasten/domain nouns (Namespace, Policy, Location Profile, Action kind
+// names, action states like Failed/Complete) are deliberately left in
+// English in every language, same convention as cpouthier/malware-scan -
+// only surrounding UI prose is translated.
+const SUPPORTED_LANGS = ['en', 'fr', 'de', 'it', 'es'];
+const LANG_KEY = 'kasten-alerting-lang';
+let currentLang = 'en';
+
+const I18N = {
+  en: {
+    'topbar.suite': 'Action Monitoring', 'topbar.toggleTheme': 'Toggle dark mode', 'topbar.serverTime': 'Server time:',
+    'tabs.settings': 'Settings', 'tabs.history': 'History',
+    'settings.title': 'Alerting settings',
+    'settings.subtitle': "Polls Kasten action objects on a timer (there's no real-time watch support for these - see README) and emails a digest whenever new ones finish in a status you've selected below.",
+    'settings.save': 'Save', 'settings.saved': 'Saved.',
+    'settings.monitoring.title': 'Monitoring', 'settings.monitoring.enabled': 'Enabled',
+    'settings.monitoring.actionKinds': 'Action kinds to monitor', 'settings.monitoring.statuses': 'Alert on status',
+    'settings.monitoring.excludedPolicies': 'Excluded policies (comma-separated policy names, never alerted on)',
+    'settings.monitoring.excludedPoliciesPlaceholder': 'e.g. k10-disaster-recovery-policy',
+    'settings.monitoring.interval': 'Check every (seconds, minimum 60)',
+    'settings.monitoring.checkNow': 'Check now', 'settings.monitoring.checking': 'Checking...',
+    'settings.smtp.title': 'Email (SMTP)', 'settings.smtp.host': 'SMTP host', 'settings.smtp.port': 'Port',
+    'settings.smtp.security': 'Security', 'settings.smtp.securityNone': 'None',
+    'settings.smtp.username': 'Username (optional)', 'settings.smtp.usernamePlaceholder': 'leave blank for no auth',
+    'settings.smtp.password': 'Password', 'settings.smtp.from': 'From address',
+    'settings.smtp.recipients': 'Recipients (comma-separated)',
+    'settings.smtp.testEmail': 'Send test email', 'settings.smtp.sending': 'Sending...',
+    'settings.smtp.testSent': 'Test email sent.',
+    'password.set': 'A password is currently set. Leave blank to keep it.', 'password.notSet': 'No password set.',
+    'history.title': 'Alert history',
+    'history.subtitle': 'One row per digest email actually sent. Click a row to see every action it covered.',
+    'history.empty': 'No alerts sent yet.', 'history.loading': 'Loading...',
+    'history.table.sentAt': 'Sent at', 'history.table.actions': 'Actions', 'history.table.status': 'Status',
+    'history.sendFailed': 'Send failed', 'history.sent': 'Sent', 'history.sendFailedPrefix': 'Send failed: ',
+    'item.namespace': 'Namespace:', 'item.policy': 'Policy:', 'item.locationProfile': 'Location Profile:',
+  },
+  fr: {
+    'topbar.suite': "Supervision d'actions", 'topbar.toggleTheme': 'Basculer le mode sombre', 'topbar.serverTime': 'Heure serveur :',
+    'tabs.settings': 'Paramètres', 'tabs.history': 'Historique',
+    'settings.title': "Paramètres d'alerte",
+    'settings.subtitle': "Interroge périodiquement les objets d'action Kasten (pas de suivi temps réel possible pour ces objets - voir le README) et envoie un email récapitulatif dès qu'une nouvelle action correspond à un statut sélectionné ci-dessous.",
+    'settings.save': 'Enregistrer', 'settings.saved': 'Enregistré.',
+    'settings.monitoring.title': 'Supervision', 'settings.monitoring.enabled': 'Activé',
+    'settings.monitoring.actionKinds': "Types d'action à surveiller", 'settings.monitoring.statuses': 'Alerter sur le statut',
+    'settings.monitoring.excludedPolicies': 'Policies exclues (noms séparés par des virgules, jamais alertées)',
+    'settings.monitoring.excludedPoliciesPlaceholder': 'ex. k10-disaster-recovery-policy',
+    'settings.monitoring.interval': 'Vérifier toutes les (secondes, minimum 60)',
+    'settings.monitoring.checkNow': 'Vérifier maintenant', 'settings.monitoring.checking': 'Vérification...',
+    'settings.smtp.title': 'Email (SMTP)', 'settings.smtp.host': 'Hôte SMTP', 'settings.smtp.port': 'Port',
+    'settings.smtp.security': 'Sécurité', 'settings.smtp.securityNone': 'Aucune',
+    'settings.smtp.username': 'Utilisateur (optionnel)', 'settings.smtp.usernamePlaceholder': 'laisser vide si aucune authentification',
+    'settings.smtp.password': 'Mot de passe', 'settings.smtp.from': 'Adresse expéditeur',
+    'settings.smtp.recipients': 'Destinataires (séparés par des virgules)',
+    'settings.smtp.testEmail': "Envoyer un email de test", 'settings.smtp.sending': 'Envoi...',
+    'settings.smtp.testSent': 'Email de test envoyé.',
+    'password.set': 'Un mot de passe est actuellement défini. Laisser vide pour le conserver.', 'password.notSet': 'Aucun mot de passe défini.',
+    'history.title': 'Historique des alertes',
+    'history.subtitle': 'Une ligne par email récapitulatif réellement envoyé. Cliquer sur une ligne pour voir chaque action couverte.',
+    'history.empty': 'Aucune alerte envoyée pour le moment.', 'history.loading': 'Chargement...',
+    'history.table.sentAt': 'Envoyé le', 'history.table.actions': 'Actions', 'history.table.status': 'Statut',
+    'history.sendFailed': 'Échec envoi', 'history.sent': 'Envoyé', 'history.sendFailedPrefix': "Échec de l'envoi : ",
+    'item.namespace': 'Namespace :', 'item.policy': 'Policy :', 'item.locationProfile': 'Location Profile :',
+  },
+  de: {
+    'topbar.suite': 'Aktionsüberwachung', 'topbar.toggleTheme': 'Dunkelmodus umschalten', 'topbar.serverTime': 'Serverzeit:',
+    'tabs.settings': 'Einstellungen', 'tabs.history': 'Verlauf',
+    'settings.title': 'Alarmierungseinstellungen',
+    'settings.subtitle': 'Fragt Kasten-Aktionsobjekte in festen Abständen ab (für diese gibt es keine Echtzeitüberwachung - siehe README) und sendet eine Sammel-E-Mail, sobald eine neue Aktion einem der unten gewählten Status entspricht.',
+    'settings.save': 'Speichern', 'settings.saved': 'Gespeichert.',
+    'settings.monitoring.title': 'Überwachung', 'settings.monitoring.enabled': 'Aktiviert',
+    'settings.monitoring.actionKinds': 'Zu überwachende Aktionstypen', 'settings.monitoring.statuses': 'Bei Status alarmieren',
+    'settings.monitoring.excludedPolicies': 'Ausgeschlossene Policies (kommagetrennte Namen, nie alarmiert)',
+    'settings.monitoring.excludedPoliciesPlaceholder': 'z. B. k10-disaster-recovery-policy',
+    'settings.monitoring.interval': 'Prüfintervall (Sekunden, mindestens 60)',
+    'settings.monitoring.checkNow': 'Jetzt prüfen', 'settings.monitoring.checking': 'Wird geprüft...',
+    'settings.smtp.title': 'E-Mail (SMTP)', 'settings.smtp.host': 'SMTP-Host', 'settings.smtp.port': 'Port',
+    'settings.smtp.security': 'Sicherheit', 'settings.smtp.securityNone': 'Keine',
+    'settings.smtp.username': 'Benutzername (optional)', 'settings.smtp.usernamePlaceholder': 'leer lassen für keine Authentifizierung',
+    'settings.smtp.password': 'Passwort', 'settings.smtp.from': 'Absenderadresse',
+    'settings.smtp.recipients': 'Empfänger (kommagetrennt)',
+    'settings.smtp.testEmail': 'Test-E-Mail senden', 'settings.smtp.sending': 'Wird gesendet...',
+    'settings.smtp.testSent': 'Test-E-Mail gesendet.',
+    'password.set': 'Es ist aktuell ein Passwort gesetzt. Leer lassen, um es beizubehalten.', 'password.notSet': 'Kein Passwort gesetzt.',
+    'history.title': 'Alarmverlauf',
+    'history.subtitle': 'Eine Zeile pro tatsächlich gesendeter Sammel-E-Mail. Zeile anklicken, um jede erfasste Aktion zu sehen.',
+    'history.empty': 'Bisher keine Alarme gesendet.', 'history.loading': 'Wird geladen...',
+    'history.table.sentAt': 'Gesendet am', 'history.table.actions': 'Aktionen', 'history.table.status': 'Status',
+    'history.sendFailed': 'Senden fehlgeschlagen', 'history.sent': 'Gesendet', 'history.sendFailedPrefix': 'Senden fehlgeschlagen: ',
+    'item.namespace': 'Namespace:', 'item.policy': 'Policy:', 'item.locationProfile': 'Location Profile:',
+  },
+  it: {
+    'topbar.suite': 'Monitoraggio azioni', 'topbar.toggleTheme': 'Attiva/disattiva modalità scura', 'topbar.serverTime': 'Ora server:',
+    'tabs.settings': 'Impostazioni', 'tabs.history': 'Cronologia',
+    'settings.title': 'Impostazioni di alert',
+    'settings.subtitle': "Interroga periodicamente gli oggetti azione di Kasten (non esiste un monitoraggio in tempo reale per questi oggetti - vedi il README) e invia un'email riepilogativa ogni volta che una nuova azione corrisponde a uno stato selezionato qui sotto.",
+    'settings.save': 'Salva', 'settings.saved': 'Salvato.',
+    'settings.monitoring.title': 'Monitoraggio', 'settings.monitoring.enabled': 'Abilitato',
+    'settings.monitoring.actionKinds': 'Tipi di azione da monitorare', 'settings.monitoring.statuses': 'Avvisa per stato',
+    'settings.monitoring.excludedPolicies': 'Policy escluse (nomi separati da virgola, mai notificate)',
+    'settings.monitoring.excludedPoliciesPlaceholder': 'es. k10-disaster-recovery-policy',
+    'settings.monitoring.interval': 'Controlla ogni (secondi, minimo 60)',
+    'settings.monitoring.checkNow': 'Controlla ora', 'settings.monitoring.checking': 'Controllo...',
+    'settings.smtp.title': 'Email (SMTP)', 'settings.smtp.host': 'Host SMTP', 'settings.smtp.port': 'Porta',
+    'settings.smtp.security': 'Sicurezza', 'settings.smtp.securityNone': 'Nessuna',
+    'settings.smtp.username': 'Nome utente (opzionale)', 'settings.smtp.usernamePlaceholder': 'lascia vuoto per nessuna autenticazione',
+    'settings.smtp.password': 'Password', 'settings.smtp.from': 'Indirizzo mittente',
+    'settings.smtp.recipients': 'Destinatari (separati da virgola)',
+    'settings.smtp.testEmail': 'Invia email di prova', 'settings.smtp.sending': 'Invio...',
+    'settings.smtp.testSent': 'Email di prova inviata.',
+    'password.set': 'È attualmente impostata una password. Lascia vuoto per mantenerla.', 'password.notSet': 'Nessuna password impostata.',
+    'history.title': 'Cronologia degli alert',
+    'history.subtitle': "Una riga per ogni email riepilogativa effettivamente inviata. Clicca una riga per vedere ogni azione coperta.",
+    'history.empty': 'Nessun alert inviato finora.', 'history.loading': 'Caricamento...',
+    'history.table.sentAt': 'Inviato il', 'history.table.actions': 'Azioni', 'history.table.status': 'Stato',
+    'history.sendFailed': 'Invio fallito', 'history.sent': 'Inviato', 'history.sendFailedPrefix': 'Invio fallito: ',
+    'item.namespace': 'Namespace:', 'item.policy': 'Policy:', 'item.locationProfile': 'Location Profile:',
+  },
+  es: {
+    'topbar.suite': 'Supervisión de acciones', 'topbar.toggleTheme': 'Alternar modo oscuro', 'topbar.serverTime': 'Hora del servidor:',
+    'tabs.settings': 'Configuración', 'tabs.history': 'Historial',
+    'settings.title': 'Configuración de alertas',
+    'settings.subtitle': 'Consulta periódicamente los objetos de acción de Kasten (no existe monitorización en tiempo real para ellos - ver el README) y envía un correo resumen cada vez que una nueva acción coincide con un estado seleccionado abajo.',
+    'settings.save': 'Guardar', 'settings.saved': 'Guardado.',
+    'settings.monitoring.title': 'Supervisión', 'settings.monitoring.enabled': 'Activado',
+    'settings.monitoring.actionKinds': 'Tipos de acción a supervisar', 'settings.monitoring.statuses': 'Alertar por estado',
+    'settings.monitoring.excludedPolicies': 'Policies excluidas (nombres separados por comas, nunca notificadas)',
+    'settings.monitoring.excludedPoliciesPlaceholder': 'ej. k10-disaster-recovery-policy',
+    'settings.monitoring.interval': 'Comprobar cada (segundos, mínimo 60)',
+    'settings.monitoring.checkNow': 'Comprobar ahora', 'settings.monitoring.checking': 'Comprobando...',
+    'settings.smtp.title': 'Correo (SMTP)', 'settings.smtp.host': 'Host SMTP', 'settings.smtp.port': 'Puerto',
+    'settings.smtp.security': 'Seguridad', 'settings.smtp.securityNone': 'Ninguna',
+    'settings.smtp.username': 'Usuario (opcional)', 'settings.smtp.usernamePlaceholder': 'dejar en blanco para no autenticar',
+    'settings.smtp.password': 'Contraseña', 'settings.smtp.from': 'Dirección remitente',
+    'settings.smtp.recipients': 'Destinatarios (separados por comas)',
+    'settings.smtp.testEmail': 'Enviar correo de prueba', 'settings.smtp.sending': 'Enviando...',
+    'settings.smtp.testSent': 'Correo de prueba enviado.',
+    'password.set': 'Actualmente hay una contraseña configurada. Deja en blanco para conservarla.', 'password.notSet': 'No hay contraseña configurada.',
+    'history.title': 'Historial de alertas',
+    'history.subtitle': 'Una fila por cada correo resumen realmente enviado. Haz clic en una fila para ver cada acción incluida.',
+    'history.empty': 'Aún no se ha enviado ninguna alerta.', 'history.loading': 'Cargando...',
+    'history.table.sentAt': 'Enviado el', 'history.table.actions': 'Acciones', 'history.table.status': 'Estado',
+    'history.sendFailed': 'Envío fallido', 'history.sent': 'Enviado', 'history.sendFailedPrefix': 'Envío fallido: ',
+    'item.namespace': 'Namespace:', 'item.policy': 'Policy:', 'item.locationProfile': 'Location Profile:',
+  },
+};
+
+function t(key) {
+  return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
+}
+
+function applyI18n() {
+  document.documentElement.lang = currentLang;
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
+  tickClock();
+}
+
+function setLang(lang) {
+  currentLang = SUPPORTED_LANGS.includes(lang) ? lang : 'en';
+  localStorage.setItem(LANG_KEY, currentLang);
+  document.getElementById('lang-select').value = currentLang;
+  applyI18n();
+}
+
+// A language change reloads the page rather than re-rendering in place -
+// simpler than tracking every dynamically-rendered section (action kinds,
+// statuses, digest table) that would otherwise need a manual re-render,
+// same tradeoff malware-scan's own lang-select makes.
+document.getElementById('lang-select').addEventListener('change', (e) => {
+  localStorage.setItem(LANG_KEY, SUPPORTED_LANGS.includes(e.target.value) ? e.target.value : 'en');
+  location.reload();
+});
+setLang(localStorage.getItem(LANG_KEY) || (navigator.language || 'en').slice(0, 2));
+setInterval(tickClock, 1000);
 
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -349,7 +546,7 @@ async function loadSettings() {
 
 function updatePasswordStatus(hasPassword) {
   const el = document.getElementById('password-status');
-  el.textContent = hasPassword ? 'A password is currently set. Leave blank to keep it.' : 'No password set.';
+  el.textContent = hasPassword ? t('password.set') : t('password.notSet');
   el.classList.toggle('ok', hasPassword);
   el.classList.toggle('muted', !hasPassword);
 }
@@ -391,7 +588,7 @@ async function saveSettings(errorElId, statusElId) {
     currentSettings = await res.json();
     passwordEl.value = '';
     updatePasswordStatus(currentSettings.has_password);
-    statusEl.textContent = 'Saved.';
+    statusEl.textContent = t('settings.saved');
     statusEl.style.display = 'block';
     setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
   } catch (e) {
@@ -405,12 +602,12 @@ document.getElementById('save-smtp-btn').addEventListener('click', () => saveSet
 
 document.getElementById('poll-now-btn').addEventListener('click', async (e) => {
   e.target.disabled = true;
-  e.target.textContent = 'Checking...';
+  e.target.textContent = t('settings.monitoring.checking');
   try {
     await fetch('/api/poll-now', { method: 'POST' });
   } finally {
     e.target.disabled = false;
-    e.target.textContent = 'Check now';
+    e.target.textContent = t('settings.monitoring.checkNow');
   }
 });
 
@@ -423,7 +620,7 @@ document.getElementById('test-email-btn').addEventListener('click', async (e) =>
   const passwordEl = document.getElementById('smtp-password');
   if (passwordEl.value) body.password = passwordEl.value;
   e.target.disabled = true;
-  e.target.textContent = 'Sending...';
+  e.target.textContent = t('settings.smtp.sending');
   try {
     const res = await fetch('/api/settings/test-email', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -432,14 +629,14 @@ document.getElementById('test-email-btn').addEventListener('click', async (e) =>
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || `test failed (${res.status})`);
     }
-    statusEl.textContent = 'Test email sent.';
+    statusEl.textContent = t('settings.smtp.testSent');
     statusEl.style.display = 'block';
   } catch (e2) {
     errorEl.textContent = e2.message;
     errorEl.style.display = 'block';
   } finally {
     e.target.disabled = false;
-    e.target.textContent = 'Send test email';
+    e.target.textContent = t('settings.smtp.testEmail');
   }
 });
 
@@ -462,7 +659,7 @@ async function loadDigests() {
     tr.innerHTML = `
       <td>${d.sent_at}</td>
       <td>${d.item_count}</td>
-      <td>${d.email_error ? `<span class="pill Failed">Send failed</span>` : `<span class="pill Complete">Sent</span>`}</td>
+      <td>${d.email_error ? `<span class="pill Failed">${t('history.sendFailed')}</span>` : `<span class="pill Complete">${t('history.sent')}</span>`}</td>
     `;
     const detailTr = document.createElement('tr');
     detailTr.className = 'digest-detail';
@@ -470,7 +667,7 @@ async function loadDigests() {
     detailTd.colSpan = 3;
     const inner = document.createElement('div');
     inner.className = 'inner';
-    inner.textContent = 'Loading...';
+    inner.textContent = t('history.loading');
     detailTd.appendChild(inner);
     detailTr.appendChild(detailTd);
 
@@ -481,13 +678,13 @@ async function loadDigests() {
       if (opening && !loaded) {
         loaded = true;
         const full = await (await fetch(`/api/digests/${d.id}`)).json();
-        inner.innerHTML = (full.email_error ? `<div class="hint" style="margin-top:0;">Send failed: ${full.email_error.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>` : '') + full.items.map(item => `
+        inner.innerHTML = (full.email_error ? `<div class="hint" style="margin-top:0;">${t('history.sendFailedPrefix')}${full.email_error.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>` : '') + full.items.map(item => `
           <div class="item-row">
             <div class="head">
               <span class="pill ${item.state}">${item.state}</span>
               <span class="name">${item.kind} ${item.name}</span>
             </div>
-            <div class="meta">Namespace: ${item.namespace || '—'} ${item.policy_name ? `&middot; Policy: ${item.policy_name}` : ''} ${item.location_profile ? `&middot; Location Profile: ${item.location_profile}` : ''} &middot; ${item.timestamp}</div>
+            <div class="meta">${t('item.namespace')} ${item.namespace || '—'} ${item.policy_name ? `&middot; ${t('item.policy')} ${item.policy_name}` : ''} ${item.location_profile ? `&middot; ${t('item.locationProfile')} ${item.location_profile}` : ''} &middot; ${item.timestamp}</div>
             ${item.error_lines && item.error_lines.length ? `<div class="log">${item.error_lines.map(l => l.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))).join('\n')}</div>` : ''}
           </div>
         `).join('');
