@@ -33,6 +33,7 @@ import alerting
 import db
 import k10
 import settings
+import snmp_trap
 
 logger = logging.getLogger("kasten-alerting.poller")
 
@@ -143,21 +144,32 @@ async def run_once() -> None:
         return
 
     logger.info("%d new alertable action(s) this cycle", len(all_new_items))
-    if not cfg["enabled"]:
-        # Bookkeeping (seen_actions/kind_baseline) still ran above so
-        # nothing piles up while alerting is off - just no email while
-        # it's toggled off, same as malware-scan's own email_alerts.enabled.
-        return
 
-    digest_id = uuid.uuid4().hex[:12]
-    sent_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    email_error = None
-    try:
-        await alerting.send_digest(cfg, all_new_items)
-    except Exception as exc:
-        logger.exception("failed to send digest email")
-        email_error = str(exc)
-    db.insert_digest(digest_id, sent_at, all_new_items, email_error)
+    # Email and SNMP are independent delivery channels, each with its own
+    # enabled flag - bookkeeping above already ran regardless of either,
+    # so toggling one or both off just means no delivery this cycle, never
+    # a backlog once turned back on.
+    if cfg["enabled"]:
+        digest_id = uuid.uuid4().hex[:12]
+        sent_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        email_error = None
+        try:
+            await alerting.send_digest(cfg, all_new_items)
+        except Exception as exc:
+            logger.exception("failed to send digest email")
+            email_error = str(exc)
+        db.insert_digest(digest_id, sent_at, all_new_items, email_error)
+
+    if cfg.get("snmp_enabled"):
+        # One trap per action, not batched (unlike the digest email) - see
+        # snmp_trap.py's module docstring for why. A failure on one item
+        # is logged and skipped, not allowed to stop the rest of the
+        # batch or the email path above.
+        for item in all_new_items:
+            try:
+                await snmp_trap.send_alert_trap(item)
+            except Exception:
+                logger.exception("failed to send SNMP trap for %s %s/%s", item["kind"], item["namespace"], item["name"])
 
 
 async def run_forever() -> None:

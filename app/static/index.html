@@ -274,6 +274,108 @@ td.mono{font-family:ui-monospace,'Cascadia Mono','Consolas',monospace;font-size:
     <div class="hint" id="smtp-error" style="display:none;"></div>
     <div class="hint ok" id="smtp-status" style="display:none;"></div>
   </div>
+
+  <div class="card">
+    <h2 data-i18n="settings.snmp.title">SNMP Traps</h2>
+    <p class="hint muted" style="margin-top:0;" data-i18n="settings.snmp.subtitle">One trap per detected action (not batched like the digest email) - an NMS is expected to correlate a burst of these itself. See MIB.md for how to import KASTEN-ALERTING-MIB into your tool.</p>
+    <div class="toggle-row">
+      <input type="checkbox" id="snmp-enabled-checkbox">
+      <label style="margin:0;" for="snmp-enabled-checkbox" data-i18n="settings.monitoring.enabled">Enabled</label>
+    </div>
+
+    <div class="field-grid">
+      <div>
+        <label for="snmp-host" data-i18n="settings.snmp.host">Receiver host</label>
+        <input type="text" id="snmp-host" placeholder="nms.example.com">
+      </div>
+      <div>
+        <label for="snmp-port" data-i18n="settings.smtp.port">Port</label>
+        <input type="number" id="snmp-port" value="162">
+      </div>
+    </div>
+
+    <label for="snmp-version" data-i18n="settings.snmp.version">SNMP version</label>
+    <select id="snmp-version">
+      <option value="v2c">v2c</option>
+      <option value="v3">v3</option>
+    </select>
+
+    <div id="snmp-v2c-fields">
+      <label for="snmp-community" data-i18n="settings.snmp.community">Community string</label>
+      <input type="password" id="snmp-community" placeholder="">
+      <div class="hint muted" id="snmp-community-status"></div>
+    </div>
+
+    <div id="snmp-v3-fields" style="display:none;">
+      <label for="snmp-v3-username" data-i18n="settings.snmp.v3Username">Username</label>
+      <input type="text" id="snmp-v3-username">
+
+      <div class="field-grid">
+        <div>
+          <label for="snmp-v3-auth-protocol" data-i18n="settings.snmp.authProtocol">Authentication</label>
+          <select id="snmp-v3-auth-protocol">
+            <option value="sha">SHA</option>
+            <option value="md5">MD5</option>
+            <option value="none" data-i18n="settings.smtp.securityNone">None</option>
+          </select>
+        </div>
+        <div>
+          <label for="snmp-v3-auth-password" data-i18n="settings.snmp.authPassword">Auth password</label>
+          <input type="password" id="snmp-v3-auth-password">
+        </div>
+      </div>
+      <div class="hint muted" id="snmp-v3-auth-status"></div>
+
+      <div class="field-grid">
+        <div>
+          <label for="snmp-v3-priv-protocol" data-i18n="settings.snmp.privProtocol">Privacy (encryption)</label>
+          <select id="snmp-v3-priv-protocol">
+            <option value="aes">AES</option>
+            <option value="des">DES</option>
+            <option value="none" data-i18n="settings.smtp.securityNone">None</option>
+          </select>
+        </div>
+        <div>
+          <label for="snmp-v3-priv-password" data-i18n="settings.snmp.privPassword">Priv password</label>
+          <input type="password" id="snmp-v3-priv-password">
+        </div>
+      </div>
+      <div class="hint muted" id="snmp-v3-priv-status"></div>
+
+      <label for="snmp-engine-id" data-i18n="settings.snmp.engineId">This app's SNMPv3 Engine ID (needed by your NMS - see MIB.md)</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="snmp-engine-id" readonly style="font-family:ui-monospace,Consolas,monospace;font-size:.75rem;">
+        <button class="secondary" id="copy-engine-id-btn" type="button" style="margin-top:0;" data-i18n="settings.snmp.copy">Copy</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="save-snmp-btn" data-i18n="settings.save">Save</button>
+      <button class="secondary" id="test-trap-btn" type="button" data-i18n="settings.snmp.testTrap">Send test trap</button>
+    </div>
+    <div class="hint" id="snmp-error" style="display:none;"></div>
+    <div class="hint ok" id="snmp-status" style="display:none;"></div>
+  </div>
+
+  <div class="card">
+    <h2 data-i18n="settings.maintenance.title">Maintenance</h2>
+    <p class="hint muted" style="margin-top:0;" data-i18n="settings.maintenance.subtitle">Periodically removes bookkeeping for actions no longer in the cluster (see README) - this only affects internal deduplication state, never the History tab above.</p>
+    <div class="toggle-row">
+      <input type="checkbox" id="maintenance-enabled-checkbox">
+      <label style="margin:0;" for="maintenance-enabled-checkbox" data-i18n="settings.monitoring.enabled">Enabled</label>
+    </div>
+
+    <label for="maintenance-interval" data-i18n="settings.maintenance.interval">Clean up every (days, minimum 1)</label>
+    <input type="number" id="maintenance-interval" min="1" step="1" value="7">
+
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="save-maintenance-btn" data-i18n="settings.save">Save</button>
+      <button class="secondary" id="maintenance-run-now-btn" type="button" data-i18n="settings.maintenance.runNow">Clean up now</button>
+    </div>
+    <div class="hint" id="maintenance-error" style="display:none;"></div>
+    <div class="hint ok" id="maintenance-status" style="display:none;"></div>
+    <p class="hint muted" id="maintenance-last-run" style="margin-top:10px;"></p>
+  </div>
 </div>
 
 <div class="page" id="page-history">
@@ -344,6 +446,22 @@ const I18N = {
     'settings.smtp.testEmail': 'Send test email', 'settings.smtp.sending': 'Sending...',
     'settings.smtp.testSent': 'Test email sent.',
     'password.set': 'A password is currently set. Leave blank to keep it.', 'password.notSet': 'No password set.',
+    'settings.snmp.title': 'SNMP Traps',
+    'settings.snmp.subtitle': "One trap per detected action (not batched like the digest email) - an NMS is expected to correlate a burst of these itself. See MIB.md for how to import KASTEN-ALERTING-MIB into your tool.",
+    'settings.snmp.host': 'Receiver host', 'settings.snmp.version': 'SNMP version',
+    'settings.snmp.community': 'Community string', 'settings.snmp.v3Username': 'Username',
+    'settings.snmp.authProtocol': 'Authentication', 'settings.snmp.authPassword': 'Auth password',
+    'settings.snmp.privProtocol': 'Privacy (encryption)', 'settings.snmp.privPassword': 'Priv password',
+    'settings.snmp.engineId': "This app's SNMPv3 Engine ID (needed by your NMS - see MIB.md)",
+    'settings.snmp.copy': 'Copy', 'settings.snmp.copied': 'Copied!',
+    'settings.snmp.testTrap': 'Send test trap', 'settings.snmp.testTrapSent': 'Test trap sent.',
+    'settings.maintenance.title': 'Maintenance',
+    'settings.maintenance.subtitle': 'Periodically removes bookkeeping for actions no longer in the cluster (see README) - this only affects internal deduplication state, never the History tab above.',
+    'settings.maintenance.interval': 'Clean up every (days, minimum 1)',
+    'settings.maintenance.runNow': 'Clean up now', 'settings.maintenance.running': 'Cleaning up...',
+    'settings.maintenance.lastRunNever': 'Never run yet.',
+    'settings.maintenance.lastRunSummary': 'Last run: {date} - checked {kinds} kind(s), removed {rows} row(s).',
+    'settings.maintenance.lastRunError': 'Last run: {date} - failed: {error}',
     'history.title': 'Alert history',
     'history.subtitle': 'One row per digest email actually sent. Click a row to see every action it covered.',
     'history.empty': 'No alerts sent yet.', 'history.loading': 'Loading...',
@@ -371,6 +489,22 @@ const I18N = {
     'settings.smtp.testEmail': "Envoyer un email de test", 'settings.smtp.sending': 'Envoi...',
     'settings.smtp.testSent': 'Email de test envoyé.',
     'password.set': 'Un mot de passe est actuellement défini. Laisser vide pour le conserver.', 'password.notSet': 'Aucun mot de passe défini.',
+    'settings.snmp.title': 'Traps SNMP',
+    'settings.snmp.subtitle': "Un trap par action détectée (non groupé comme l'email récapitulatif) - un NMS est censé corréler lui-même une rafale de traps. Voir MIB.md pour importer KASTEN-ALERTING-MIB dans votre outil.",
+    'settings.snmp.host': 'Hôte destinataire', 'settings.snmp.version': 'Version SNMP',
+    'settings.snmp.community': 'Chaîne de communauté', 'settings.snmp.v3Username': 'Utilisateur',
+    'settings.snmp.authProtocol': 'Authentification', 'settings.snmp.authPassword': 'Mot de passe auth',
+    'settings.snmp.privProtocol': 'Confidentialité (chiffrement)', 'settings.snmp.privPassword': 'Mot de passe priv',
+    'settings.snmp.engineId': "Engine ID SNMPv3 de cette app (requis par votre NMS - voir MIB.md)",
+    'settings.snmp.copy': 'Copier', 'settings.snmp.copied': 'Copié !',
+    'settings.snmp.testTrap': 'Envoyer un trap de test', 'settings.snmp.testTrapSent': 'Trap de test envoyé.',
+    'settings.maintenance.title': 'Maintenance',
+    'settings.maintenance.subtitle': "Supprime périodiquement le suivi interne des actions qui n'existent plus dans le cluster (voir le README) - cela n'affecte que la déduplication interne, jamais l'onglet Historique ci-dessus.",
+    'settings.maintenance.interval': 'Nettoyer tous les (jours, minimum 1)',
+    'settings.maintenance.runNow': 'Nettoyer maintenant', 'settings.maintenance.running': 'Nettoyage...',
+    'settings.maintenance.lastRunNever': 'Jamais exécuté.',
+    'settings.maintenance.lastRunSummary': 'Dernière exécution : {date} - {kinds} type(s) vérifié(s), {rows} ligne(s) supprimée(s).',
+    'settings.maintenance.lastRunError': 'Dernière exécution : {date} - échec : {error}',
     'history.title': 'Historique des alertes',
     'history.subtitle': 'Une ligne par email récapitulatif réellement envoyé. Cliquer sur une ligne pour voir chaque action couverte.',
     'history.empty': 'Aucune alerte envoyée pour le moment.', 'history.loading': 'Chargement...',
@@ -398,6 +532,22 @@ const I18N = {
     'settings.smtp.testEmail': 'Test-E-Mail senden', 'settings.smtp.sending': 'Wird gesendet...',
     'settings.smtp.testSent': 'Test-E-Mail gesendet.',
     'password.set': 'Es ist aktuell ein Passwort gesetzt. Leer lassen, um es beizubehalten.', 'password.notSet': 'Kein Passwort gesetzt.',
+    'settings.snmp.title': 'SNMP-Traps',
+    'settings.snmp.subtitle': 'Ein Trap pro erkannter Aktion (nicht gesammelt wie die Sammel-E-Mail) - ein NMS soll einen Schwall davon selbst korrelieren. Siehe MIB.md zum Importieren von KASTEN-ALERTING-MIB in Ihr Tool.',
+    'settings.snmp.host': 'Empfänger-Host', 'settings.snmp.version': 'SNMP-Version',
+    'settings.snmp.community': 'Community-String', 'settings.snmp.v3Username': 'Benutzername',
+    'settings.snmp.authProtocol': 'Authentifizierung', 'settings.snmp.authPassword': 'Auth-Passwort',
+    'settings.snmp.privProtocol': 'Datenschutz (Verschlüsselung)', 'settings.snmp.privPassword': 'Priv-Passwort',
+    'settings.snmp.engineId': 'SNMPv3-Engine-ID dieser App (von Ihrem NMS benötigt - siehe MIB.md)',
+    'settings.snmp.copy': 'Kopieren', 'settings.snmp.copied': 'Kopiert!',
+    'settings.snmp.testTrap': 'Test-Trap senden', 'settings.snmp.testTrapSent': 'Test-Trap gesendet.',
+    'settings.maintenance.title': 'Wartung',
+    'settings.maintenance.subtitle': 'Entfernt regelmäßig die interne Buchführung für Aktionen, die nicht mehr im Cluster vorhanden sind (siehe README) - betrifft nur die interne Deduplizierung, niemals den Verlauf oben.',
+    'settings.maintenance.interval': 'Aufräumen alle (Tage, mindestens 1)',
+    'settings.maintenance.runNow': 'Jetzt aufräumen', 'settings.maintenance.running': 'Wird aufgeräumt...',
+    'settings.maintenance.lastRunNever': 'Noch nie ausgeführt.',
+    'settings.maintenance.lastRunSummary': 'Letzter Lauf: {date} - {kinds} Typ(en) geprüft, {rows} Zeile(n) entfernt.',
+    'settings.maintenance.lastRunError': 'Letzter Lauf: {date} - fehlgeschlagen: {error}',
     'history.title': 'Alarmverlauf',
     'history.subtitle': 'Eine Zeile pro tatsächlich gesendeter Sammel-E-Mail. Zeile anklicken, um jede erfasste Aktion zu sehen.',
     'history.empty': 'Bisher keine Alarme gesendet.', 'history.loading': 'Wird geladen...',
@@ -425,6 +575,22 @@ const I18N = {
     'settings.smtp.testEmail': 'Invia email di prova', 'settings.smtp.sending': 'Invio...',
     'settings.smtp.testSent': 'Email di prova inviata.',
     'password.set': 'È attualmente impostata una password. Lascia vuoto per mantenerla.', 'password.notSet': 'Nessuna password impostata.',
+    'settings.snmp.title': 'Trap SNMP',
+    'settings.snmp.subtitle': "Un trap per ogni azione rilevata (non raggruppati come l'email riepilogativa) - un NMS è pensato per correlare da solo una raffica di trap. Vedi MIB.md per importare KASTEN-ALERTING-MIB nel tuo strumento.",
+    'settings.snmp.host': 'Host destinatario', 'settings.snmp.version': 'Versione SNMP',
+    'settings.snmp.community': 'Community string', 'settings.snmp.v3Username': 'Nome utente',
+    'settings.snmp.authProtocol': 'Autenticazione', 'settings.snmp.authPassword': 'Password di autenticazione',
+    'settings.snmp.privProtocol': 'Privacy (cifratura)', 'settings.snmp.privPassword': 'Password di privacy',
+    'settings.snmp.engineId': "Engine ID SNMPv3 di questa app (richiesto dal tuo NMS - vedi MIB.md)",
+    'settings.snmp.copy': 'Copia', 'settings.snmp.copied': 'Copiato!',
+    'settings.snmp.testTrap': 'Invia trap di prova', 'settings.snmp.testTrapSent': 'Trap di prova inviato.',
+    'settings.maintenance.title': 'Manutenzione',
+    'settings.maintenance.subtitle': "Rimuove periodicamente il tracciamento interno delle azioni non più presenti nel cluster (vedi il README) - riguarda solo la deduplicazione interna, mai la scheda Cronologia qui sopra.",
+    'settings.maintenance.interval': 'Pulisci ogni (giorni, minimo 1)',
+    'settings.maintenance.runNow': 'Pulisci ora', 'settings.maintenance.running': 'Pulizia...',
+    'settings.maintenance.lastRunNever': 'Mai eseguito.',
+    'settings.maintenance.lastRunSummary': 'Ultima esecuzione: {date} - {kinds} tipo/i controllato/i, {rows} riga/e rimossa/e.',
+    'settings.maintenance.lastRunError': 'Ultima esecuzione: {date} - fallita: {error}',
     'history.title': 'Cronologia degli alert',
     'history.subtitle': "Una riga per ogni email riepilogativa effettivamente inviata. Clicca una riga per vedere ogni azione coperta.",
     'history.empty': 'Nessun alert inviato finora.', 'history.loading': 'Caricamento...',
@@ -452,6 +618,22 @@ const I18N = {
     'settings.smtp.testEmail': 'Enviar correo de prueba', 'settings.smtp.sending': 'Enviando...',
     'settings.smtp.testSent': 'Correo de prueba enviado.',
     'password.set': 'Actualmente hay una contraseña configurada. Deja en blanco para conservarla.', 'password.notSet': 'No hay contraseña configurada.',
+    'settings.snmp.title': 'Traps SNMP',
+    'settings.snmp.subtitle': 'Un trap por cada acción detectada (no agrupados como el correo resumen) - se espera que un NMS correlacione por sí mismo una ráfaga de estos. Ver MIB.md para importar KASTEN-ALERTING-MIB en tu herramienta.',
+    'settings.snmp.host': 'Host receptor', 'settings.snmp.version': 'Versión SNMP',
+    'settings.snmp.community': 'Cadena de comunidad', 'settings.snmp.v3Username': 'Usuario',
+    'settings.snmp.authProtocol': 'Autenticación', 'settings.snmp.authPassword': 'Contraseña de autenticación',
+    'settings.snmp.privProtocol': 'Privacidad (cifrado)', 'settings.snmp.privPassword': 'Contraseña de privacidad',
+    'settings.snmp.engineId': 'ID de motor SNMPv3 de esta app (requerido por tu NMS - ver MIB.md)',
+    'settings.snmp.copy': 'Copiar', 'settings.snmp.copied': '¡Copiado!',
+    'settings.snmp.testTrap': 'Enviar trap de prueba', 'settings.snmp.testTrapSent': 'Trap de prueba enviado.',
+    'settings.maintenance.title': 'Mantenimiento',
+    'settings.maintenance.subtitle': 'Elimina periódicamente el seguimiento interno de acciones que ya no están en el clúster (ver el README) - solo afecta a la deduplicación interna, nunca a la pestaña Historial de arriba.',
+    'settings.maintenance.interval': 'Limpiar cada (días, mínimo 1)',
+    'settings.maintenance.runNow': 'Limpiar ahora', 'settings.maintenance.running': 'Limpiando...',
+    'settings.maintenance.lastRunNever': 'Nunca ejecutado.',
+    'settings.maintenance.lastRunSummary': 'Última ejecución: {date} - {kinds} tipo(s) revisado(s), {rows} fila(s) eliminada(s).',
+    'settings.maintenance.lastRunError': 'Última ejecución: {date} - fallo: {error}',
     'history.title': 'Historial de alertas',
     'history.subtitle': 'Una fila por cada correo resumen realmente enviado. Haz clic en una fila para ver cada acción incluida.',
     'history.empty': 'Aún no se ha enviado ninguna alerta.', 'history.loading': 'Cargando...',
@@ -541,15 +723,38 @@ async function loadSettings() {
   document.getElementById('smtp-username').value = currentSettings.smtp_username || '';
   document.getElementById('from-address').value = currentSettings.from_address || '';
   document.getElementById('to-addresses').value = (currentSettings.to_addresses || []).join(', ');
-  updatePasswordStatus(currentSettings.has_password);
+  updateCredStatus('password-status', currentSettings.has_password);
+
+  document.getElementById('snmp-enabled-checkbox').checked = currentSettings.snmp_enabled;
+  document.getElementById('snmp-host').value = currentSettings.snmp_host || '';
+  document.getElementById('snmp-port').value = currentSettings.snmp_port || 162;
+  document.getElementById('snmp-version').value = currentSettings.snmp_version || 'v2c';
+  document.getElementById('snmp-v3-username').value = currentSettings.snmp_v3_username || '';
+  document.getElementById('snmp-v3-auth-protocol').value = currentSettings.snmp_v3_auth_protocol || 'sha';
+  document.getElementById('snmp-v3-priv-protocol').value = currentSettings.snmp_v3_priv_protocol || 'aes';
+  document.getElementById('snmp-engine-id').value = currentSettings.snmp_engine_id || '';
+  toggleSnmpVersionFields();
+  const snmpCreds = currentSettings.snmp_credentials || {};
+  updateCredStatus('snmp-community-status', snmpCreds.has_community);
+  updateCredStatus('snmp-v3-auth-status', snmpCreds.has_v3_auth_password);
+  updateCredStatus('snmp-v3-priv-status', snmpCreds.has_v3_priv_password);
+
+  await loadMaintenance();
 }
 
-function updatePasswordStatus(hasPassword) {
-  const el = document.getElementById('password-status');
-  el.textContent = hasPassword ? t('password.set') : t('password.notSet');
-  el.classList.toggle('ok', hasPassword);
-  el.classList.toggle('muted', !hasPassword);
+function updateCredStatus(elId, hasIt) {
+  const el = document.getElementById(elId);
+  el.textContent = hasIt ? t('password.set') : t('password.notSet');
+  el.classList.toggle('ok', hasIt);
+  el.classList.toggle('muted', !hasIt);
 }
+
+function toggleSnmpVersionFields() {
+  const isV3 = document.getElementById('snmp-version').value === 'v3';
+  document.getElementById('snmp-v2c-fields').style.display = isV3 ? 'none' : 'block';
+  document.getElementById('snmp-v3-fields').style.display = isV3 ? 'block' : 'none';
+}
+document.getElementById('snmp-version').addEventListener('change', toggleSnmpVersionFields);
 
 function readForm() {
   return {
@@ -564,6 +769,13 @@ function readForm() {
     smtp_username: document.getElementById('smtp-username').value.trim(),
     from_address: document.getElementById('from-address').value.trim(),
     to_addresses: document.getElementById('to-addresses').value.split(',').map(s => s.trim()).filter(Boolean),
+    snmp_enabled: document.getElementById('snmp-enabled-checkbox').checked,
+    snmp_host: document.getElementById('snmp-host').value.trim(),
+    snmp_port: parseInt(document.getElementById('snmp-port').value, 10) || 162,
+    snmp_version: document.getElementById('snmp-version').value,
+    snmp_v3_username: document.getElementById('snmp-v3-username').value.trim(),
+    snmp_v3_auth_protocol: document.getElementById('snmp-v3-auth-protocol').value,
+    snmp_v3_priv_protocol: document.getElementById('snmp-v3-priv-protocol').value,
   };
 }
 
@@ -576,6 +788,12 @@ async function saveSettings(errorElId, statusElId) {
   const body = readForm();
   const passwordEl = document.getElementById('smtp-password');
   if (passwordEl.value) body.password = passwordEl.value;
+  const communityEl = document.getElementById('snmp-community');
+  const authPwEl = document.getElementById('snmp-v3-auth-password');
+  const privPwEl = document.getElementById('snmp-v3-priv-password');
+  if (communityEl.value) body.snmp_community = communityEl.value;
+  if (authPwEl.value) body.snmp_v3_auth_password = authPwEl.value;
+  if (privPwEl.value) body.snmp_v3_priv_password = privPwEl.value;
 
   try {
     const res = await fetch('/api/settings', {
@@ -587,7 +805,15 @@ async function saveSettings(errorElId, statusElId) {
     }
     currentSettings = await res.json();
     passwordEl.value = '';
-    updatePasswordStatus(currentSettings.has_password);
+    communityEl.value = '';
+    authPwEl.value = '';
+    privPwEl.value = '';
+    updateCredStatus('password-status', currentSettings.has_password);
+    const snmpCreds = currentSettings.snmp_credentials || {};
+    updateCredStatus('snmp-community-status', snmpCreds.has_community);
+    updateCredStatus('snmp-v3-auth-status', snmpCreds.has_v3_auth_password);
+    updateCredStatus('snmp-v3-priv-status', snmpCreds.has_v3_priv_password);
+    document.getElementById('snmp-engine-id').value = currentSettings.snmp_engine_id || '';
     statusEl.textContent = t('settings.saved');
     statusEl.style.display = 'block';
     setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
@@ -599,6 +825,121 @@ async function saveSettings(errorElId, statusElId) {
 
 document.getElementById('save-monitoring-btn').addEventListener('click', () => saveSettings('monitoring-error', 'monitoring-status'));
 document.getElementById('save-smtp-btn').addEventListener('click', () => saveSettings('smtp-error', 'smtp-status'));
+document.getElementById('save-snmp-btn').addEventListener('click', () => saveSettings('snmp-error', 'snmp-status'));
+
+document.getElementById('copy-engine-id-btn').addEventListener('click', async (e) => {
+  const value = document.getElementById('snmp-engine-id').value;
+  if (!value) return;
+  try {
+    await navigator.clipboard.writeText(value);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = value;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  const original = e.target.textContent;
+  e.target.textContent = t('settings.snmp.copied');
+  setTimeout(() => { e.target.textContent = original; }, 1500);
+});
+
+document.getElementById('test-trap-btn').addEventListener('click', async (e) => {
+  const errorEl = document.getElementById('snmp-error');
+  const statusEl = document.getElementById('snmp-status');
+  errorEl.style.display = 'none';
+  statusEl.style.display = 'none';
+  const body = readForm();
+  const communityEl = document.getElementById('snmp-community');
+  const authPwEl = document.getElementById('snmp-v3-auth-password');
+  const privPwEl = document.getElementById('snmp-v3-priv-password');
+  if (communityEl.value) body.snmp_community = communityEl.value;
+  if (authPwEl.value) body.snmp_v3_auth_password = authPwEl.value;
+  if (privPwEl.value) body.snmp_v3_priv_password = privPwEl.value;
+  e.target.disabled = true;
+  e.target.textContent = t('settings.smtp.sending');
+  try {
+    const res = await fetch('/api/settings/test-trap', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `test failed (${res.status})`);
+    }
+    statusEl.textContent = t('settings.snmp.testTrapSent');
+    statusEl.style.display = 'block';
+  } catch (e2) {
+    errorEl.textContent = e2.message;
+    errorEl.style.display = 'block';
+  } finally {
+    e.target.disabled = false;
+    e.target.textContent = t('settings.snmp.testTrap');
+  }
+});
+
+function renderMaintenanceStatus(lastRun) {
+  const el = document.getElementById('maintenance-last-run');
+  if (!lastRun) {
+    el.textContent = t('settings.maintenance.lastRunNever');
+  } else if (lastRun.error) {
+    el.textContent = t('settings.maintenance.lastRunError')
+      .replace('{date}', lastRun.ran_at).replace('{error}', lastRun.error);
+  } else {
+    el.textContent = t('settings.maintenance.lastRunSummary')
+      .replace('{date}', lastRun.ran_at).replace('{kinds}', lastRun.kinds_checked).replace('{rows}', lastRun.rows_removed);
+  }
+}
+
+async function loadMaintenance() {
+  const cfg = await (await fetch('/api/maintenance')).json();
+  document.getElementById('maintenance-enabled-checkbox').checked = cfg.enabled;
+  document.getElementById('maintenance-interval').value = cfg.interval_days;
+  renderMaintenanceStatus(cfg.last_run);
+}
+
+document.getElementById('save-maintenance-btn').addEventListener('click', async () => {
+  const errorEl = document.getElementById('maintenance-error');
+  const statusEl = document.getElementById('maintenance-status');
+  errorEl.style.display = 'none';
+  statusEl.style.display = 'none';
+  try {
+    const res = await fetch('/api/maintenance', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        enabled: document.getElementById('maintenance-enabled-checkbox').checked,
+        interval_days: parseInt(document.getElementById('maintenance-interval').value, 10) || 7,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `save failed (${res.status})`);
+    }
+    const cfg = await res.json();
+    renderMaintenanceStatus(cfg.last_run);
+    statusEl.textContent = t('settings.saved');
+    statusEl.style.display = 'block';
+    setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
+  } catch (e) {
+    errorEl.textContent = e.message;
+    errorEl.style.display = 'block';
+  }
+});
+
+document.getElementById('maintenance-run-now-btn').addEventListener('click', async (e) => {
+  e.target.disabled = true;
+  e.target.textContent = t('settings.maintenance.running');
+  try {
+    const res = await fetch('/api/maintenance/run-now', { method: 'POST' });
+    const data = await res.json();
+    renderMaintenanceStatus(data.last_run);
+  } finally {
+    e.target.disabled = false;
+    e.target.textContent = t('settings.maintenance.runNow');
+  }
+});
 
 document.getElementById('poll-now-btn').addEventListener('click', async (e) => {
   e.target.disabled = true;

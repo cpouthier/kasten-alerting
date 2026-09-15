@@ -1,0 +1,217 @@
+KASTEN-ALERTING-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE, enterprises
+        FROM SNMPv2-SMI
+    DisplayString
+        FROM SNMPv2-TC
+    MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+        FROM SNMPv2-CONF;
+
+kastenAlertingMIB MODULE-IDENTITY
+    LAST-UPDATED "202609150000Z"
+    ORGANIZATION "cpouthier/kasten-alerting"
+    CONTACT-INFO
+        "https://github.com/cpouthier/kasten-alerting"
+    DESCRIPTION
+        "Notifications for kasten-alerting, which polls Veeam Kasten action
+        objects (BackupAction, RestoreAction, ExportAction, RunAction, and
+        every other pollable actions.kio.kasten.io kind) and raises one
+        notification per action it detects finishing in a status you've
+        selected (Failed/Cancelled/Skipped/Complete) - see that project's
+        README for the polling mechanism and MIB.md for how to import
+        this module and interpret each object below.
+
+        PLACEHOLDER ENTERPRISE NUMBER: this module is registered under
+        enterprises.99999, which is NOT an IANA-assigned Private
+        Enterprise Number for this project - it is a commonly-used
+        placeholder in examples/tutorials, picked here only because this
+        is a personal/internal tool with no real PEN of its own. If you
+        run this MIB alongside other vendors' MIBs on the same NMS and
+        need guaranteed global uniqueness, register a free PEN at
+        https://pen.iana.org and renumber the enterprises arc below (and
+        the matching OIDs in kasten-alerting's own app/snmp_trap.py)
+        before relying on this in a shared/multi-vendor environment."
+    REVISION "202609150000Z"
+    DESCRIPTION
+        "Initial version."
+    ::= { enterprises 99999 }
+
+kastenAlertingObjects OBJECT IDENTIFIER ::= { kastenAlertingMIB 1 }
+kastenAlertingNotifications OBJECT IDENTIFIER ::= { kastenAlertingMIB 2 }
+kastenAlertingNotificationsPrefix OBJECT IDENTIFIER ::= { kastenAlertingNotifications 0 }
+kastenAlertingConformance OBJECT IDENTIFIER ::= { kastenAlertingMIB 3 }
+kastenAlertingCompliances OBJECT IDENTIFIER ::= { kastenAlertingConformance 1 }
+kastenAlertingGroups OBJECT IDENTIFIER ::= { kastenAlertingConformance 2 }
+
+-- ── Objects (varbinds carried by the notifications below) ──────────────────
+
+kastenActionKind OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..64))
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "The Kasten action kind, e.g. 'BackupAction', 'ExportAction',
+        'RunAction' - matches the Kubernetes Kind of the
+        actions.kio.kasten.io object exactly, never translated or
+        abbreviated."
+    ::= { kastenAlertingObjects 1 }
+
+kastenActionName OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..253))
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "The action object's own Kubernetes metadata.name - unique
+        together with kastenActionKind and kastenActionNamespace at the
+        moment the notification was sent."
+    ::= { kastenAlertingObjects 2 }
+
+kastenActionNamespace OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..253))
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "The namespace of the application this action concerns
+        (k10.kasten.io/appNamespace, falling back to the action object's
+        own namespace). Empty for a cluster-scoped action kind
+        (BackupClusterAction, RestoreClusterAction, RetireAction)."
+    ::= { kastenAlertingObjects 3 }
+
+kastenActionPolicy OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..253))
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "The Kasten Policy that triggered this action
+        (k10.kasten.io/policyName) - empty for an action not driven by a
+        policy (e.g. a manual/ad-hoc action)."
+    ::= { kastenAlertingObjects 4 }
+
+kastenActionLocationProfile OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..253))
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "The Kasten Location Profile this action reads from or writes to
+        (spec.profile.name) - mainly populated for ExportAction/
+        ImportAction/BackupAction, empty wherever Kasten doesn't set it."
+    ::= { kastenAlertingObjects 5 }
+
+kastenActionState OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..32))
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "The action's terminal status.state exactly as Kasten reports it:
+        'Complete', 'Failed', 'Cancelled', or 'Skipped'. See
+        kastenActionSeverity for a coarser, NMS-friendly classification
+        of the same value."
+    ::= { kastenAlertingObjects 6 }
+
+kastenActionSeverity OBJECT-TYPE
+    SYNTAX      INTEGER { critical(1), warning(2), informational(3) }
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "A coarse severity derived from kastenActionState, for NMS tools
+        that colour-code or escalate on this field rather than parsing
+        kastenActionState's free text: critical(1) for Failed,
+        warning(2) for Cancelled/Skipped, informational(3) for Complete."
+    ::= { kastenAlertingObjects 7 }
+
+kastenActionTimestamp OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..64))
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "When the action reached this terminal state, formatted in
+        kasten-alerting's own configured display timezone (see that
+        project's app/tz.py and Helm chart's `timezone` value) - the same
+        string shown in its digest email and History tab, not a raw UTC
+        timestamp."
+    ::= { kastenAlertingObjects 8 }
+
+kastenActionErrorMessage OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..255))
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "The top-level message from the action's status.error, when it
+        has one (typically only set for Failed) - truncated to 255
+        characters, the practical SNMP OCTET STRING limit most agents/
+        managers enforce. Empty when the action has no error (Complete,
+        Cancelled, Skipped, or a Failed action with no error recorded)."
+    ::= { kastenAlertingObjects 9 }
+
+kastenActionUID OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..64))
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "The action object's Kubernetes metadata.uid - a stable
+        correlation key, useful for an NMS to deduplicate or cross-
+        reference this notification against kasten-alerting's own
+        History tab or REST API (GET /api/digests) for the same event."
+    ::= { kastenAlertingObjects 10 }
+
+-- ── Notifications ────────────────────────────────────────────────────────
+
+kastenActionAlertTrap NOTIFICATION-TYPE
+    OBJECTS {
+        kastenActionKind, kastenActionName, kastenActionNamespace,
+        kastenActionPolicy, kastenActionLocationProfile, kastenActionState,
+        kastenActionSeverity, kastenActionTimestamp, kastenActionErrorMessage,
+        kastenActionUID
+    }
+    STATUS      current
+    DESCRIPTION
+        "Sent once for every Kasten action kasten-alerting detects
+        finishing in a status you've selected in its Settings page - one
+        notification per action, not batched (unlike its digest email,
+        which groups a poll cycle's findings into one message - an NMS is
+        expected to correlate/deduplicate a burst of these itself, the
+        way it already does for any other flood of traps from a single
+        underlying incident)."
+    ::= { kastenAlertingNotificationsPrefix 1 }
+
+kastenAlertingTestTrap NOTIFICATION-TYPE
+    OBJECTS { kastenActionTimestamp }
+    STATUS      current
+    DESCRIPTION
+        "Sent by the 'Send test trap' button on kasten-alerting's Settings
+        page, to verify SNMP trap delivery end to end before relying on
+        kastenActionAlertTrap for real alerts."
+    ::= { kastenAlertingNotificationsPrefix 2 }
+
+-- ── Conformance ──────────────────────────────────────────────────────────
+
+kastenAlertingObjectsGroup OBJECT-GROUP
+    OBJECTS {
+        kastenActionKind, kastenActionName, kastenActionNamespace,
+        kastenActionPolicy, kastenActionLocationProfile, kastenActionState,
+        kastenActionSeverity, kastenActionTimestamp, kastenActionErrorMessage,
+        kastenActionUID
+    }
+    STATUS      current
+    DESCRIPTION
+        "Every object carried by this module's notifications."
+    ::= { kastenAlertingGroups 1 }
+
+kastenAlertingNotificationsGroup NOTIFICATION-GROUP
+    NOTIFICATIONS { kastenActionAlertTrap, kastenAlertingTestTrap }
+    STATUS      current
+    DESCRIPTION
+        "Every notification this module defines."
+    ::= { kastenAlertingGroups 2 }
+
+kastenAlertingCompliance MODULE-COMPLIANCE
+    STATUS      current
+    DESCRIPTION
+        "Compliance statement for agents implementing the
+        KASTEN-ALERTING-MIB (i.e. kasten-alerting itself)."
+    MODULE
+        MANDATORY-GROUPS { kastenAlertingObjectsGroup, kastenAlertingNotificationsGroup }
+    ::= { kastenAlertingCompliances 1 }
+
+END

@@ -1,8 +1,8 @@
 # kasten-alerting
 
 Alerts on Veeam Kasten action failures (and any other outcome you care
-about) by email - BackupAction, RestoreAction, ExportAction, RunAction, and
-every other action kind Kasten exposes.
+about) by email and/or SNMP trap - BackupAction, RestoreAction,
+ExportAction, RunAction, and every other action kind Kasten exposes.
 
 ---
 
@@ -23,19 +23,30 @@ objects on a cluster with a long history) would otherwise dump its entire
 backlog into one digest email. From the next poll onward, only genuinely
 new terminal-state actions are ever reported.
 
-## What triggers an email
+## What triggers an alert
 
-One digest email per poll cycle that found at least one new action whose
-kind and status you've selected, not one email per action, so an incident
-that fails many actions at once (a storage outage, say) can't flood your
-inbox. Each digest lists every action it covers: kind, action name, policy
-name (when the action came from a policy - `k10.kasten.io/policyName`),
-namespace, timestamp, and, for anything that failed, the full error/cause
-chain Kasten recorded on the object itself (`status.error`).
+Email and SNMP are two independent delivery channels, each with its own
+"Enabled" toggle in Settings - turn on either, both, or neither. Both fire
+from the exact same underlying detection (a new action whose kind and
+status you've selected), just packaged differently:
 
-Toggling alerting off in Settings doesn't stop the polling/bookkeeping,
-only the emailing - so nothing piles up into a flood the moment you turn
-it back on.
+- **Email**: one digest per poll cycle that found at least one new
+  matching action, not one email per action, so an incident that fails
+  many actions at once (a storage outage, say) can't flood your inbox.
+  Each digest lists every action it covers: kind, action name, policy name
+  (when the action came from a policy - `k10.kasten.io/policyName`),
+  Location Profile (for ExportAction/ImportAction/BackupAction), namespace,
+  timestamp, and, for anything that failed, the full error/cause chain
+  Kasten recorded on the object itself (`status.error`).
+- **SNMP trap**: one `kastenActionAlertTrap` per action, not batched - an
+  NMS is built to correlate a burst of these itself, unlike an inbox. See
+  [MIB.md](MIB.md) for the full object reference, NMS import instructions,
+  and prerequisites (including an SNMPv3-specific requirement that will
+  silently break every trap if missed).
+
+Toggling either channel off in Settings doesn't stop the underlying
+polling/bookkeeping, only that channel's delivery - so nothing piles up
+into a flood the moment you turn it back on.
 
 ## Action kinds monitored
 
@@ -55,6 +66,53 @@ unambiguous "something is actually wrong" outcome; `Cancelled`/`Skipped`
 (usually a manual cancel, a policy skipping a namespace it
 already handled) and `Complete` (a full audit trail of successes too) are
 available to enable in Settings.
+
+---
+
+## SNMP prerequisites
+
+The full reference lives in [MIB.md](MIB.md) - this is the short version
+of what has to be true before "Send test trap" will actually arrive
+somewhere.
+
+**Network:**
+- UDP egress from the kasten-alerting pod to your NMS, on the configured
+  port (default `162`; many environments use a non-privileged port like
+  `1162` instead, since binding `162` needs root on the receiver). If
+  there's a firewall between the cluster and the NMS - common, since the
+  NMS is often on a different network segment - open that port explicitly.
+  There's no way to detect a blocked port from kasten-alerting's side:
+  TRAP is fire-and-forget UDP, so a "sent successfully" locally doesn't
+  mean the NMS ever received it.
+- No inbound access needed - kasten-alerting only ever sends, never
+  listens for anything SNMP-related.
+
+**On the NMS:**
+- Import `mibs/KASTEN-ALERTING-MIB.mib` if you want traps to render with
+  real field names instead of raw numeric OIDs (not required for the trap
+  to be *received*, only to be *readable*).
+- **v2c**: a community string matching what's configured in Settings.
+- **v3**: username + auth/priv passwords matching, **plus** the NMS must
+  be told kasten-alerting's own SNMPv3 Engine ID in advance (shown on the
+  Settings page) - this is a real RFC 3414 requirement for TRAP specifically
+  (as opposed to a GET/SET), not an implementation quirk, and skipping it
+  silently drops every authenticated trap. See MIB.md's SNMPv3 section for
+  exactly why and how to configure it, confirmed against a real
+  `snmptrapd` during development.
+
+---
+
+## Maintenance
+
+The dedup bookkeeping that keeps poller.py from alerting on the same
+action twice (`seen_actions`, see `app/db.py`) only ever grows on its own -
+even for actions Kasten itself has since garbage-collected (RunAction and
+RetireAction especially churn through thousands of objects over a
+cluster's lifetime). A background task reconciles it against what's
+actually still in the cluster and deletes rows for anything gone, weekly
+by default - configurable (interval in days) or triggerable on demand
+("Clean up now") from the Settings page. This only ever touches internal
+deduplication state, never the History tab's own record of alerts sent.
 
 ---
 
@@ -150,19 +208,20 @@ namespace via `RoleBinding`) - on `secrets`:
 get, list, watch, create, patch, delete
 ```
 
-This app only ever touches one Secret, its own SMTP password
-(`kasten-alerting-smtp`), always in its own namespace - so unlike the
-action kinds above, this is intentionally *not* in the ClusterRole, which
-would otherwise mean a grant on every Secret in every namespace cluster-
-wide. `create`+`patch` because saving the password goes through `kubectl
-apply` (create on the first save, patch on every one after); `delete` is
-for clearing it from the Settings page. The password itself is
-write-only end to end: the API never returns it once saved, only whether
-one is currently set (`has_password`).
+This app only ever touches two Secrets, always in its own namespace: the
+SMTP password (`kasten-alerting-smtp`) and, if SNMP trapping is enabled,
+the v2c community string / v3 auth+priv passwords (`kasten-alerting-snmp`)
+- so unlike the action kinds above, this is intentionally *not* in the
+ClusterRole, which would otherwise mean a grant on every Secret in every
+namespace cluster-wide. `create`+`patch` because saving either goes
+through `kubectl apply` (create on the first save, patch on every one
+after); `delete` is for clearing credentials from the Settings page. Both
+are write-only end to end: the API never returns any of them once saved,
+only whether each is currently set (`has_password`, `snmp_credentials`).
 
 Nothing else is granted - no access to Pods, logs, ConfigMaps, or any
 other resource. Unlike malware-scan (which restores data into scratch
 namespaces and runs scanner pods), this app only ever reads Kasten action
-objects and manages its own Secret.
+objects and manages its own two Secrets.
 
 ---

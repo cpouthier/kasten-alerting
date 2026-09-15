@@ -1,11 +1,14 @@
 """App-wide settings, persisted as JSON on the shared PVC (same pattern as
 cpouthier/malware-scan's app/settings.py) - so they survive a pod restart.
 
-The SMTP *password* is deliberately NOT stored here: like malware-scan's
-own settings.py, it's real credential material, not just config, so it
-lives in a Kubernetes Secret instead (see k10.py/alerting.py). Every other
-field, including which action kinds/statuses to alert on and how often to
-poll, is fine as plaintext JSON, same trust level as everything else here.
+Real credential material is deliberately NOT stored here, same split as
+malware-scan's own settings.py: the SMTP password (see alerting.py) and
+the SNMP v2c community string / v3 auth+priv passwords (see snmp_trap.py)
+each live in their own Kubernetes Secret instead. Every other field,
+including which action kinds/statuses to alert on, how often to poll, and
+the non-secret SNMP connection details (host/port/version/username/
+protocols), is fine as plaintext JSON, same trust level as everything
+else here.
 """
 import json
 import logging
@@ -43,7 +46,34 @@ DEFAULT_ALERTING = {
     "smtp_username": "",
     "from_address": "",
     "to_addresses": [],
+    # SNMP traps are an independent delivery channel from email above -
+    # its own enabled flag, not gated by `enabled` (which only ever
+    # controls the digest email) - see poller.run_once. One trap per
+    # alertable action, not batched into a digest; see snmp_trap.py.
+    "snmp_enabled": False,
+    "snmp_host": "",
+    "snmp_port": 162,
+    "snmp_version": "v2c",  # "v2c" | "v3"
+    "snmp_v3_username": "",
+    "snmp_v3_auth_protocol": "sha",  # "sha" | "md5" | "none"
+    "snmp_v3_priv_protocol": "aes",  # "aes" | "des" | "none"
+    # This app's own SNMPv3 engineID (RFC3411), minus the fixed enterprise
+    # prefix - generated once, on first use, and never afterward; see
+    # snmp_trap._get_engine_id for why this can never just be regenerated
+    # per restart without breaking every NMS already configured for it.
+    "snmp_engine_id_suffix": "",
 }
+
+# Weekly reconciliation of db.seen_actions against what's actually still
+# in the cluster - Kasten itself can eventually garbage-collect old action
+# objects (RunAction/RetireAction especially, see k10.ACTION_KINDS), at
+# which point this app's own bookkeeping of their UIDs is pure dead
+# weight with nothing left to ever reference it again. See maintenance.py.
+DEFAULT_MAINTENANCE = {
+    "enabled": True,
+    "interval_days": 7,
+}
+MIN_MAINTENANCE_INTERVAL_DAYS = 1
 
 _SETTINGS: dict = {}
 
@@ -55,7 +85,7 @@ def init() -> None:
 def _load() -> None:
     global _SETTINGS
     if not os.path.exists(SETTINGS_FILE):
-        _SETTINGS = {"alerting": dict(DEFAULT_ALERTING)}
+        _SETTINGS = {"alerting": dict(DEFAULT_ALERTING), "maintenance": dict(DEFAULT_MAINTENANCE)}
         return
     try:
         with open(SETTINGS_FILE) as f:
@@ -67,7 +97,8 @@ def _load() -> None:
     # after this was first saved (e.g. a new action kind) would otherwise
     # silently be missing instead of falling back sanely.
     alerting = {**DEFAULT_ALERTING, **data.get("alerting", {})}
-    _SETTINGS = {"alerting": alerting}
+    maintenance = {**DEFAULT_MAINTENANCE, **data.get("maintenance", {})}
+    _SETTINGS = {"alerting": alerting, "maintenance": maintenance}
 
 
 def _save() -> None:
@@ -87,6 +118,21 @@ def update_alerting(**fields) -> dict:
     current.update(fields)
     _validate_alerting(current)
     _SETTINGS["alerting"] = current
+    _save()
+    return current
+
+
+def get_maintenance() -> dict:
+    return dict(_SETTINGS.get("maintenance", DEFAULT_MAINTENANCE))
+
+
+def update_maintenance(**fields) -> dict:
+    current = get_maintenance()
+    current.update(fields)
+    interval = int(current.get("interval_days") or 0)
+    if interval < MIN_MAINTENANCE_INTERVAL_DAYS:
+        raise ValueError(f"interval_days must be at least {MIN_MAINTENANCE_INTERVAL_DAYS}")
+    _SETTINGS["maintenance"] = current
     _save()
     return current
 
@@ -117,3 +163,20 @@ def _validate_alerting(cfg: dict) -> None:
             raise ValueError("from_address is required when alerting is enabled")
         if not cfg.get("to_addresses"):
             raise ValueError("at least one recipient (to_addresses) is required when alerting is enabled")
+
+    if cfg.get("snmp_enabled"):
+        if not cfg.get("snmp_host"):
+            raise ValueError("snmp_host is required when SNMP trapping is enabled")
+        if not (1 <= int(cfg.get("snmp_port") or 0) <= 65535):
+            raise ValueError("snmp_port must be between 1 and 65535")
+        if cfg.get("snmp_version") not in ("v2c", "v3"):
+            raise ValueError('snmp_version must be "v2c" or "v3"')
+        if cfg["snmp_version"] == "v3":
+            if not cfg.get("snmp_v3_username"):
+                raise ValueError("snmp_v3_username is required for SNMPv3")
+            if cfg.get("snmp_v3_auth_protocol") not in ("sha", "md5", "none"):
+                raise ValueError('snmp_v3_auth_protocol must be "sha", "md5" or "none"')
+            if cfg.get("snmp_v3_priv_protocol") not in ("aes", "des", "none"):
+                raise ValueError('snmp_v3_priv_protocol must be "aes", "des" or "none"')
+            if cfg["snmp_v3_priv_protocol"] != "none" and cfg["snmp_v3_auth_protocol"] == "none":
+                raise ValueError("SNMPv3 privacy (encryption) requires authentication to also be enabled")

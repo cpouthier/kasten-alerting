@@ -39,6 +39,11 @@ ACTION_KINDS = [
     {"id": "retireactions", "kind": "RetireAction", "label": "Retire (housekeeping, high volume)", "default_selected": False},
 ]
 ACTION_KIND_BY_ID = {k["id"]: k for k in ACTION_KINDS}
+# poller.py stores the Kubernetes Kind (e.g. "BackupAction"), not the
+# resource id (e.g. "backupactions"), against each row in db.seen_actions -
+# maintenance.py needs this reverse lookup to know which resource to list
+# when reconciling a given kind's bookkeeping against the live cluster.
+ACTION_KIND_BY_LABEL = {k["kind"]: k for k in ACTION_KINDS}
 
 # The 4 terminal states a Kasten action can end in - see README for how
 # this was confirmed against a live cluster. Anything else (Running,
