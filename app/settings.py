@@ -23,10 +23,12 @@ DEFAULT_ALERTING = {
     "enabled": False,
     "action_kinds": [k["id"] for k in k10.ACTION_KINDS if k["default_selected"]],
     # Shared across every selected action kind (see the "one filter for
-    # everything" design decision) - "Complete" is deliberately off by
-    # default (alerting on every single success would be noisy), the other
-    # three ("something didn't just finish normally") are on.
-    "statuses": ["Failed", "Cancelled", "Skipped"],
+    # everything" design decision) - only "Failed" by default, the one
+    # unambiguous "something is actually wrong" outcome; Cancelled/Skipped/
+    # Complete are usually routine (a policy skipping a namespace it
+    # already handled, a manual cancel, an ordinary success) and available
+    # to enable in Settings for anyone who wants a fuller audit trail.
+    "statuses": ["Failed"],
     # Policy names (k10.kasten.io/policyName) to never alert on, even if
     # their actions otherwise match action_kinds/statuses above - e.g. a
     # cluster's own k10-disaster-recovery-policy, whose BackupActions are

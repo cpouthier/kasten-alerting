@@ -49,10 +49,12 @@ The first five are selected by default; the rest (mostly
 rarer or, in Retire's case, very high-volume housekeeping) are available
 to enable in Settings but off by default.
 
-Statuses: `Complete`, `Failed`, `Cancelled`, `Skipped` - one shared filter
-across every selected kind. `Failed`/`Cancelled`/`Skipped` are on by
-default, `Complete` is off (alerting on every single success would be
-noisy) but available if you want a full audit trail.
+Statuses: `Complete`, `Failed`, `Cancelled`, `Skipped` (one shared filter
+across every selected kind). Only `Failed` is on by default - the one
+unambiguous "something is actually wrong" outcome; `Cancelled`/`Skipped`
+(usually a manual cancel, a policy skipping a namespace it
+already handled) and `Complete` (a full audit trail of successes too) are
+available to enable in Settings.
 
 ---
 
