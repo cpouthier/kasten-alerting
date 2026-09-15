@@ -1,0 +1,16 @@
+# settings.json (app/settings.py) + alerts.db (app/db.py: dedup bookkeeping
+# and the alert history the Settings page's History tab shows) - both need
+# to survive a pod restart/redeploy.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kasten-alerting-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kasten-alerting.labels" . | nindent 4 }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: {{ required "storageClass is required - set it to a StorageClass that exists in your cluster (kubectl get storageclass)" .Values.storageClass | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.data.size }}

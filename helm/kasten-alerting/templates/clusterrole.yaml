@@ -1,0 +1,38 @@
+# Cluster-scoped by necessity: actions live in whichever namespace their
+# source application does (or cluster-wide for BackupClusterAction/
+# RestoreClusterAction/RetireAction), not a fixed namespace this chart
+# controls.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kasten-alerting
+  labels:
+    {{- include "kasten-alerting.labels" . | nindent 4 }}
+rules:
+  # Every action kind poller.py can list (see app/k10.py's ACTION_KINDS) -
+  # "get,list" only: this app only ever observes, never creates/deletes a
+  # Kasten action. CancelAction is deliberately absent - its API only
+  # supports "create" (it's a command, not a queryable object), so RBAC for
+  # get/list on it would be meaningless.
+  - apiGroups: ["actions.kio.kasten.io"]
+    resources:
+      - backupactions
+      - backupclusteractions
+      - batchrestoreactions
+      - exportactions
+      - importactions
+      - reportactions
+      - restoreactions
+      - restoreclusteractions
+      - retireactions
+      - runactions
+      - stageactions
+      - upgradeactions
+      - validateactions
+    verbs: ["get", "list"]
+  # SMTP password Secret, same pattern as malware-scan's own SMTP alerting -
+  # "patch" because re-applying an existing Secret goes through PATCH, not
+  # POST (see app/k10.py's create_secret).
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "patch", "delete"]

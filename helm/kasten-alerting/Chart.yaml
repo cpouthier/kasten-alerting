@@ -1,0 +1,21 @@
+apiVersion: v2
+name: kasten-alerting
+description: >-
+  Polls Kasten K10 action objects (BackupAction, RestoreAction,
+  ExportAction, RunAction, etc.) and sends a digest email whenever new ones
+  finish in a status you've selected - there's no watch/real-time support
+  for these on a Kasten cluster, so this polls on a configurable interval.
+type: application
+version: 0.1.0
+appVersion: "latest"
+home: https://github.com/cpouthier/kasten-alerting
+sources:
+  - https://github.com/cpouthier/kasten-alerting
+keywords:
+  - kasten
+  - k10
+  - backup
+  - alerting
+  - monitoring
+maintainers:
+  - name: cpouthier

@@ -1,0 +1,52 @@
+# Default values for the kasten-alerting chart.
+# Override with `helm install ... -f my-values.yaml` or `--set key=value`.
+
+image:
+  registry: docker.io
+  repository: cpouthier/kasten-alerting
+  tag: latest
+  pullPolicy: Always
+  pullSecrets: []
+
+# StorageClass for the settings/state PVC (settings.json + the SQLite
+# dedup/history database, see app/settings.py and app/db.py) - REQUIRED,
+# must already exist in your cluster (kubectl get storageclass).
+storageClass: ""
+
+# Only set this if storageClass above is node-local (a local-path/ZFS-
+# LocalPV-style CSI driver, where a volume can only ever be mounted on the
+# node it physically lives on): the data PVC is ReadWriteOnce, so this
+# app's pod then needs pinning to that same node too. Leave empty for a
+# network-backed storage class.
+nodeName: ""
+
+data:
+  size: 1Gi
+
+service:
+  type: LoadBalancer
+  port: 80
+  # annotations: {}
+  # loadBalancerIP: ""   # pin a specific address (e.g. a MetalLB pool IP)
+
+# OpenShift only - set service.type above to ClusterIP and enable this
+# instead of LoadBalancer/Ingress to expose the app externally. Ignored
+# (and safe to leave alone) on plain Kubernetes.
+route:
+  enabled: false
+  host: ""
+  tls:
+    enabled: true
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  # annotations: {}
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+replicaCount: 1

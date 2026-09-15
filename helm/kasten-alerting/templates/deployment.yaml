@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kasten-alerting
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kasten-alerting.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "kasten-alerting.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kasten-alerting.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: kasten-alerting
+      {{- if .Values.nodeName }}
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.nodeName }}
+      {{- end }}
+      containers:
+        - name: kasten-alerting
+          image: {{ include "kasten-alerting.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: kasten-alerting-data

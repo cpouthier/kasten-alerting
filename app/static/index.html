@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kasten-alerting</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Same palette as kasten-malware-scan's own UI. */
+  --veeam-green:#00b336;
+  --ink:#14212a;
+  --primary:#00b336; --primary-dark:#00922c; --primary-tint:rgba(0,179,54,.10);
+  --green-dark:#0b7a30;
+  --bg:#f2f5f7; --card:#ffffff; --border:#e2e7ea; --border2:#c9d1d7;
+  --text:#1c2b33; --muted:#5d6b75; --muted2:#8b99a3;
+  --neutral-tint:#f1f4f6; --hover-tint:#f7fbf8;
+  --red:#d13438; --red-dark:#a72125; --red-tint:rgba(209,52,56,.10);
+  --orange:#c97a00; --orange-tint:rgba(201,122,0,.12);
+  --blue:#0f6cbd;
+  --info-bg:#f5f9fc; --info-border:#dbe6ee; --info-text:#3f5261;
+  --radius:4px;
+  --shadow:0 1px 2px rgba(20,33,42,.07);
+}
+:root[data-theme="dark"]{
+  --ink:#0c1318;
+  --primary-tint:rgba(0,179,54,.18);
+  --bg:#0d1319; --card:#161f27; --border:#263038; --border2:#37424c;
+  --text:#e6edf1; --muted:#93a3ad; --muted2:#66757e;
+  --neutral-tint:#1c262e; --hover-tint:#1a2620;
+  --red-tint:rgba(209,52,56,.20); --orange-tint:rgba(201,122,0,.20);
+  --info-bg:#132029; --info-border:#254050; --info-text:#a9c2ce;
+  --shadow:0 1px 3px rgba(0,0,0,.35);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#0c1318;
+    --primary-tint:rgba(0,179,54,.18);
+    --bg:#0d1319; --card:#161f27; --border:#263038; --border2:#37424c;
+    --text:#e6edf1; --muted:#93a3ad; --muted2:#66757e;
+    --neutral-tint:#1c262e; --hover-tint:#1a2620;
+    --red-tint:rgba(209,52,56,.20); --orange-tint:rgba(201,122,0,.20);
+    --info-bg:#132029; --info-border:#254050; --info-text:#a9c2ce;
+    --shadow:0 1px 3px rgba(0,0,0,.35);
+  }
+}
+html,body{height:100%}
+body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,'Open Sans',Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);font-size:13.5px;line-height:1.45;
+  display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;
+  transition:background .15s,color .15s;}
+
+.topbar{height:52px;background:var(--ink);flex-shrink:0;color:#fff;
+  display:flex;align-items:center;padding:0 20px;gap:14px;}
+.topbar .brand{display:flex;align-items:center;gap:11px;}
+.topbar .brand .icon{width:28px;height:28px;background:var(--veeam-green);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.topbar .brand .icon svg{width:16px;height:16px;color:#fff;}
+.topbar .brand .titles{display:flex;flex-direction:column;line-height:1.15;}
+.topbar .brand .product{font-size:.94rem;font-weight:600;letter-spacing:.01em;}
+.topbar .brand .suite{font-size:.66rem;text-transform:uppercase;letter-spacing:.11em;color:#8fa3af;font-weight:600;}
+.topbar .spacer{flex:1}
+.topbar-controls{display:flex;align-items:center;gap:10px;padding-left:16px;border-left:1px solid rgba(255,255,255,.12);}
+.icon-btn{background:transparent;border:1px solid rgba(255,255,255,.22);color:#dce6ea;border-radius:3px;
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.icon-btn:hover{background:rgba(255,255,255,.1);}
+.icon-btn svg{width:15px;height:15px;}
+.icon-btn .icon-moon{display:none;}
+:root[data-theme="dark"] .icon-btn .icon-sun{display:none;}
+:root[data-theme="dark"] .icon-btn .icon-moon{display:block;}
+
+.tabs{display:flex;gap:2px;background:var(--card);border-bottom:1px solid var(--border);padding:0 26px;flex-shrink:0;}
+.tab{padding:12px 16px;font-size:.83rem;font-weight:600;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;user-select:none;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--green-dark);border-bottom-color:var(--veeam-green);}
+
+.content{flex:1;overflow-y:auto;padding:22px 26px 60px;display:flex;justify-content:center;}
+.page{width:100%;max-width:820px;display:none;}
+.page.active{display:block;}
+.pagehead{margin-bottom:18px;}
+h1.pagetitle{font-size:1.3rem;font-weight:600;letter-spacing:-.01em;margin-bottom:3px;}
+.pagesub{font-size:.81rem;color:var(--muted);}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 18px 18px;margin-bottom:16px;box-shadow:var(--shadow);}
+.card h2{font-size:.88rem;font-weight:700;color:var(--text);letter-spacing:.01em;
+  padding-bottom:10px;margin-bottom:14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.card h2 .actions{display:flex;gap:8px;}
+.card h2 button{margin-top:0;}
+
+label{display:block;font-size:.76rem;color:var(--muted);margin-bottom:5px;margin-top:14px;font-weight:600;}
+label:first-child{margin-top:0;}
+select,input[type=text],input[type=number],input[type=password],textarea{width:100%;background:var(--card);
+  border:1px solid var(--border2);color:var(--text);border-radius:3px;padding:7px 9px;font-size:.82rem;font-family:inherit;}
+select{height:33px;}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-tint);}
+input[type=checkbox]{accent-color:var(--veeam-green);margin-right:6px;}
+.field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;}
+
+.checkbox-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px 16px;margin-top:6px;}
+.checkbox-row{display:flex;align-items:center;font-size:.82rem;color:var(--text);font-weight:500;}
+.checkbox-row.muted-item{color:var(--muted);}
+.status-checkboxes{display:flex;gap:20px;flex-wrap:wrap;margin-top:6px;}
+
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.toggle-row label{margin:0;}
+
+.info-box{background:var(--info-bg);border:1px solid var(--info-border);border-left:3px solid var(--blue);
+  border-radius:3px;padding:10px 13px;font-size:.78rem;color:var(--info-text);margin:12px 0;line-height:1.55;}
+
+button{background:var(--primary);color:#fff;border:1px solid var(--primary);border-radius:3px;
+  padding:8px 16px;font-weight:600;font-size:.82rem;font-family:inherit;cursor:pointer;margin-top:16px;
+  transition:background .12s,border-color .12s;}
+button:hover:not(:disabled){background:var(--primary-dark);border-color:var(--primary-dark);}
+button:disabled{opacity:.45;cursor:not-allowed;}
+button.secondary{background:var(--card);color:var(--text);border-color:var(--border2);}
+button.secondary:hover:not(:disabled){background:var(--neutral-tint);border-color:var(--border2);}
+
+.hint{font-size:.76rem;color:var(--red);margin-top:8px;font-weight:600;}
+.hint.ok{color:var(--green-dark);}
+.hint.muted{color:var(--muted);font-weight:500;}
+
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.8rem;}
+thead th{background:var(--neutral-tint);color:var(--muted);font-weight:700;font-size:.67rem;
+  text-transform:uppercase;letter-spacing:.05em;text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);}
+td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tbody tr.digest-row{cursor:pointer;}
+tbody tr.digest-row:hover{background:var(--hover-tint);}
+td.mono{font-family:ui-monospace,'Cascadia Mono','Consolas',monospace;font-size:.72rem;color:var(--muted);}
+#digests-empty{color:var(--muted);font-size:.82rem;padding:4px 0 0;}
+
+.pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:.68rem;font-weight:700;text-transform:uppercase;}
+.pill.Failed{background:var(--red-tint);color:var(--red-dark,var(--red));}
+.pill.Cancelled,.pill.Skipped{background:var(--orange-tint);color:var(--orange);}
+.pill.Complete{background:var(--primary-tint);color:var(--green-dark);}
+
+.digest-detail{display:none;background:var(--neutral-tint);}
+.digest-detail td{border-bottom:1px solid var(--border);padding:0;}
+.digest-detail .inner{padding:12px 16px;}
+.item-row{padding:8px 0;border-bottom:1px solid var(--border);font-size:.78rem;}
+.item-row:last-child{border-bottom:none;}
+.item-row .head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px;}
+.item-row .name{font-weight:600;font-family:ui-monospace,Consolas,monospace;font-size:.75rem;}
+.item-row .meta{color:var(--muted);font-size:.74rem;}
+.item-row .log{margin-top:4px;background:#111c23;color:#b9c7d0;border-radius:3px;padding:8px 10px;
+  font-family:ui-monospace,Consolas,monospace;font-size:.7rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="icon">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 1.6c-2 0-3.5 1.6-3.5 3.7v2.1c0 .6-.2 1.2-.6 1.7L2.8 10.5c-.5.6-.1 1.5.7 1.5h9c.8 0 1.2-.9.7-1.5l-1.1-1.4c-.4-.5-.6-1.1-.6-1.7V5.3C11.5 3.2 10 1.6 8 1.6Z"/>
+        <path d="M6.3 13.4a1.8 1.8 0 0 0 3.4 0"/>
+      </svg>
+    </div>
+    <div class="titles">
+      <div class="product">kasten-alerting</div>
+      <div class="suite">Action Monitoring</div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="topbar-controls">
+    <button class="icon-btn" id="theme-toggle-btn" type="button" title="Toggle dark mode">
+      <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+        <circle cx="8" cy="8" r="3.1"/><path d="M8 1.3v1.6M8 13.1v1.6M2.6 8H1M15 8h-1.6M3.5 3.5l1.1 1.1M11.4 11.4l1.1 1.1M12.5 3.5l-1.1 1.1M4.6 11.4l-1.1 1.1"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M13.8 9.5A5.8 5.8 0 1 1 6.5 2.2a4.6 4.6 0 0 0 7.3 7.3Z"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-page="settings">Settings</div>
+  <div class="tab" data-page="history">History</div>
+</div>
+
+<div class="content">
+<div class="page active" id="page-settings">
+  <div class="pagehead">
+    <h1 class="pagetitle">Alerting settings</h1>
+    <p class="pagesub">Polls Kasten action objects on a timer (there's no real-time watch support for these - see README) and emails a digest whenever new ones finish in a status you've selected below.</p>
+  </div>
+
+  <div class="card">
+    <h2>Monitoring</h2>
+    <div class="toggle-row">
+      <input type="checkbox" id="enabled-checkbox">
+      <label style="margin:0;" for="enabled-checkbox">Enabled</label>
+    </div>
+
+    <label>Action kinds to monitor</label>
+    <div class="checkbox-grid" id="action-kinds-grid"></div>
+
+    <label>Alert on status</label>
+    <div class="status-checkboxes" id="statuses-grid"></div>
+
+    <label for="poll-interval">Check every (seconds, minimum 60)</label>
+    <input type="number" id="poll-interval" min="60" step="30" value="300">
+
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="save-monitoring-btn">Save</button>
+      <button class="secondary" id="poll-now-btn" type="button">Check now</button>
+    </div>
+    <div class="hint" id="monitoring-error" style="display:none;"></div>
+    <div class="hint ok" id="monitoring-status" style="display:none;"></div>
+  </div>
+
+  <div class="card">
+    <h2>Email (SMTP)</h2>
+    <div class="field-grid">
+      <div>
+        <label for="smtp-host">SMTP host</label>
+        <input type="text" id="smtp-host" placeholder="smtp.example.com">
+      </div>
+      <div>
+        <label for="smtp-port">Port</label>
+        <input type="number" id="smtp-port" value="587">
+      </div>
+    </div>
+    <div class="field-grid">
+      <div>
+        <label for="smtp-security">Security</label>
+        <select id="smtp-security">
+          <option value="starttls">STARTTLS</option>
+          <option value="ssl">SSL/TLS</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+      <div>
+        <label for="smtp-username">Username (optional)</label>
+        <input type="text" id="smtp-username" placeholder="leave blank for no auth">
+      </div>
+    </div>
+
+    <label for="smtp-password">Password</label>
+    <input type="password" id="smtp-password" placeholder="">
+    <div class="hint muted" id="password-status"></div>
+
+    <label for="from-address">From address</label>
+    <input type="text" id="from-address" placeholder="kasten-alerting@example.com">
+
+    <label for="to-addresses">Recipients (comma-separated)</label>
+    <input type="text" id="to-addresses" placeholder="ops@example.com, oncall@example.com">
+
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="save-smtp-btn">Save</button>
+      <button class="secondary" id="test-email-btn" type="button">Send test email</button>
+    </div>
+    <div class="hint" id="smtp-error" style="display:none;"></div>
+    <div class="hint ok" id="smtp-status" style="display:none;"></div>
+  </div>
+</div>
+
+<div class="page" id="page-history">
+  <div class="pagehead">
+    <h1 class="pagetitle">Alert history</h1>
+    <p class="pagesub">One row per digest email actually sent. Click a row to see every action it covered.</p>
+  </div>
+  <div class="card">
+    <div id="digests-empty">No alerts sent yet.</div>
+    <div class="table-wrap">
+      <table id="digests-table" style="display:none;">
+        <thead><tr><th>Sent at</th><th>Actions</th><th>Status</th></tr></thead>
+        <tbody id="digests-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const THEME_KEY = 'kasten-alerting-theme';
+function applyTheme(theme) {
+  if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
+  else delete document.documentElement.dataset.theme;
+}
+document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+  const isDark = document.documentElement.dataset.theme === 'dark'
+    || (!document.documentElement.dataset.theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const next = isDark ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+});
+applyTheme(localStorage.getItem(THEME_KEY) || 'system');
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`page-${tab.dataset.page}`).classList.add('active');
+    if (tab.dataset.page === 'history') loadDigests();
+  });
+});
+
+let ACTION_KINDS = [];
+let currentSettings = null;
+
+async function loadActionKinds() {
+  ACTION_KINDS = await (await fetch('/api/action-kinds')).json();
+  const grid = document.getElementById('action-kinds-grid');
+  grid.innerHTML = ACTION_KINDS.map(k => `
+    <label class="checkbox-row${k.default_selected ? '' : ' muted-item'}" style="margin:0;font-weight:500;">
+      <input type="checkbox" class="action-kind-cb" value="${k.id}"> ${k.label}
+    </label>
+  `).join('');
+}
+
+function renderStatuses(statuses, selected) {
+  const grid = document.getElementById('statuses-grid');
+  grid.innerHTML = statuses.map(s => `
+    <label class="checkbox-row" style="margin:0;font-weight:500;">
+      <input type="checkbox" class="status-cb" value="${s}" ${selected.includes(s) ? 'checked' : ''}> ${s}
+    </label>
+  `).join('');
+}
+
+function fmtDate(iso) {
+  try { return new Date(iso).toLocaleString(); } catch { return iso; }
+}
+
+async function loadSettings() {
+  const statuses = await (await fetch('/api/statuses')).json();
+  currentSettings = await (await fetch('/api/settings')).json();
+
+  document.getElementById('enabled-checkbox').checked = currentSettings.enabled;
+  document.querySelectorAll('.action-kind-cb').forEach(cb => {
+    cb.checked = currentSettings.action_kinds.includes(cb.value);
+  });
+  renderStatuses(statuses, currentSettings.statuses);
+  document.getElementById('poll-interval').value = currentSettings.poll_interval_seconds;
+
+  document.getElementById('smtp-host').value = currentSettings.smtp_host || '';
+  document.getElementById('smtp-port').value = currentSettings.smtp_port || 587;
+  document.getElementById('smtp-security').value = currentSettings.smtp_security || 'starttls';
+  document.getElementById('smtp-username').value = currentSettings.smtp_username || '';
+  document.getElementById('from-address').value = currentSettings.from_address || '';
+  document.getElementById('to-addresses').value = (currentSettings.to_addresses || []).join(', ');
+  document.getElementById('password-status').textContent = currentSettings.has_password
+    ? 'A password is currently set. Leave blank to keep it.' : 'No password set.';
+}
+
+function readForm() {
+  return {
+    enabled: document.getElementById('enabled-checkbox').checked,
+    action_kinds: [...document.querySelectorAll('.action-kind-cb:checked')].map(cb => cb.value),
+    statuses: [...document.querySelectorAll('.status-cb:checked')].map(cb => cb.value),
+    poll_interval_seconds: parseInt(document.getElementById('poll-interval').value, 10) || 300,
+    smtp_host: document.getElementById('smtp-host').value.trim(),
+    smtp_port: parseInt(document.getElementById('smtp-port').value, 10) || 587,
+    smtp_security: document.getElementById('smtp-security').value,
+    smtp_username: document.getElementById('smtp-username').value.trim(),
+    from_address: document.getElementById('from-address').value.trim(),
+    to_addresses: document.getElementById('to-addresses').value.split(',').map(s => s.trim()).filter(Boolean),
+  };
+}
+
+async function saveSettings(errorElId, statusElId) {
+  const errorEl = document.getElementById(errorElId);
+  const statusEl = document.getElementById(statusElId);
+  errorEl.style.display = 'none';
+  statusEl.style.display = 'none';
+
+  const body = readForm();
+  const passwordEl = document.getElementById('smtp-password');
+  if (passwordEl.value) body.password = passwordEl.value;
+
+  try {
+    const res = await fetch('/api/settings', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `save failed (${res.status})`);
+    }
+    currentSettings = await res.json();
+    passwordEl.value = '';
+    document.getElementById('password-status').textContent = currentSettings.has_password
+      ? 'A password is currently set. Leave blank to keep it.' : 'No password set.';
+    statusEl.textContent = 'Saved.';
+    statusEl.style.display = 'block';
+    setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
+  } catch (e) {
+    errorEl.textContent = e.message;
+    errorEl.style.display = 'block';
+  }
+}
+
+document.getElementById('save-monitoring-btn').addEventListener('click', () => saveSettings('monitoring-error', 'monitoring-status'));
+document.getElementById('save-smtp-btn').addEventListener('click', () => saveSettings('smtp-error', 'smtp-status'));
+
+document.getElementById('poll-now-btn').addEventListener('click', async (e) => {
+  e.target.disabled = true;
+  e.target.textContent = 'Checking...';
+  try {
+    await fetch('/api/poll-now', { method: 'POST' });
+  } finally {
+    e.target.disabled = false;
+    e.target.textContent = 'Check now';
+  }
+});
+
+document.getElementById('test-email-btn').addEventListener('click', async (e) => {
+  const errorEl = document.getElementById('smtp-error');
+  const statusEl = document.getElementById('smtp-status');
+  errorEl.style.display = 'none';
+  statusEl.style.display = 'none';
+  const body = readForm();
+  const passwordEl = document.getElementById('smtp-password');
+  if (passwordEl.value) body.password = passwordEl.value;
+  e.target.disabled = true;
+  e.target.textContent = 'Sending...';
+  try {
+    const res = await fetch('/api/settings/test-email', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `test failed (${res.status})`);
+    }
+    statusEl.textContent = 'Test email sent.';
+    statusEl.style.display = 'block';
+  } catch (e2) {
+    errorEl.textContent = e2.message;
+    errorEl.style.display = 'block';
+  } finally {
+    e.target.disabled = false;
+    e.target.textContent = 'Send test email';
+  }
+});
+
+async function loadDigests() {
+  const digests = await (await fetch('/api/digests')).json();
+  const empty = document.getElementById('digests-empty');
+  const table = document.getElementById('digests-table');
+  const body = document.getElementById('digests-body');
+  if (!digests.length) {
+    empty.style.display = 'block';
+    table.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  table.style.display = 'table';
+  body.innerHTML = '';
+  for (const d of digests) {
+    const tr = document.createElement('tr');
+    tr.className = 'digest-row';
+    tr.innerHTML = `
+      <td>${fmtDate(d.sent_at)}</td>
+      <td>${d.item_count}</td>
+      <td>${d.email_error ? `<span class="pill Failed">Send failed</span>` : `<span class="pill Complete">Sent</span>`}</td>
+    `;
+    const detailTr = document.createElement('tr');
+    detailTr.className = 'digest-detail';
+    const detailTd = document.createElement('td');
+    detailTd.colSpan = 3;
+    const inner = document.createElement('div');
+    inner.className = 'inner';
+    inner.textContent = 'Loading...';
+    detailTd.appendChild(inner);
+    detailTr.appendChild(detailTd);
+
+    let loaded = false;
+    tr.addEventListener('click', async () => {
+      const opening = detailTr.style.display !== 'table-row';
+      detailTr.style.display = opening ? 'table-row' : 'none';
+      if (opening && !loaded) {
+        loaded = true;
+        const full = await (await fetch(`/api/digests/${d.id}`)).json();
+        inner.innerHTML = (full.email_error ? `<div class="hint" style="margin-top:0;">Send failed: ${full.email_error.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>` : '') + full.items.map(item => `
+          <div class="item-row">
+            <div class="head">
+              <span class="pill ${item.state}">${item.state}</span>
+              <span class="name">${item.kind} ${item.name}</span>
+            </div>
+            <div class="meta">Namespace: ${item.namespace || '—'} ${item.policy_name ? `&middot; Policy: ${item.policy_name}` : ''} &middot; ${fmtDate(item.timestamp)}</div>
+            ${item.error_lines && item.error_lines.length ? `<div class="log">${item.error_lines.map(l => l.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))).join('\n')}</div>` : ''}
+          </div>
+        `).join('');
+      }
+    });
+
+    body.appendChild(tr);
+    body.appendChild(detailTr);
+  }
+}
+
+(async () => {
+  await loadActionKinds();
+  await loadSettings();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+kasten-alerting has been deployed to namespace "{{ .Release.Namespace }}".
+
+1. Wait for the rollout to finish:
+     kubectl -n {{ .Release.Namespace }} rollout status deployment/kasten-alerting
+
+{{- if .Values.route.enabled }}
+
+2. Find the Route's external hostname (OpenShift):
+     oc -n {{ .Release.Namespace }} get route kasten-alerting
+
+3. Browse to https://<HOST-FROM-ABOVE>
+{{- else }}
+
+2. Find the external address (may show <pending> for a few seconds if your
+   LoadBalancer implementation, e.g. MetalLB, is still assigning one):
+     kubectl -n {{ .Release.Namespace }} get svc kasten-alerting
+
+3. Browse to http://<EXTERNAL-IP>{{ if ne (int .Values.service.port) 80 }}:{{ .Values.service.port }}{{ end }}
+{{- end }}
+
+4. On the Settings page: pick which action kinds/statuses to alert on, set
+   your SMTP details, and turn "Enabled" on. Nothing is sent until you do -
+   the poller runs in the background regardless (bookkeeping only) so
+   enabling later never floods you with a backlog.
+
+Image: {{ include "kasten-alerting.image" . }}
