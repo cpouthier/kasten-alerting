@@ -487,7 +487,7 @@ async function loadDigests() {
               <span class="pill ${item.state}">${item.state}</span>
               <span class="name">${item.kind} ${item.name}</span>
             </div>
-            <div class="meta">Namespace: ${item.namespace || '—'} ${item.policy_name ? `&middot; Policy: ${item.policy_name}` : ''} &middot; ${item.timestamp}</div>
+            <div class="meta">Namespace: ${item.namespace || '—'} ${item.policy_name ? `&middot; Policy: ${item.policy_name}` : ''} ${item.location_profile ? `&middot; Location Profile: ${item.location_profile}` : ''} &middot; ${item.timestamp}</div>
             ${item.error_lines && item.error_lines.length ? `<div class="log">${item.error_lines.map(l => l.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))).join('\n')}</div>` : ''}
           </div>
         `).join('');

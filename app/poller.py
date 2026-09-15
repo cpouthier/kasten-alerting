@@ -72,6 +72,12 @@ def _extract(kind_label: str, obj: dict) -> dict:
 
     namespace = labels.get("k10.kasten.io/appNamespace") or subject.get("namespace") or meta.get("namespace") or ""
     policy_name = labels.get("k10.kasten.io/policyName") or ""
+    # Location Profile: the destination/source for an ExportAction/
+    # ImportAction's data - spec.profile.name, same field BackupAction
+    # also carries (it's where a backup's data lands). Extracted for every
+    # kind rather than gated to Export/Import specifically, since it's
+    # simply absent (empty) wherever Kasten doesn't set it.
+    location_profile = (spec.get("profile") or {}).get("name") or ""
     timestamp = status.get("endTime") or status.get("startTime") or meta.get("creationTimestamp") or ""
     error_message, error_lines = _extract_error(status.get("error"))
 
@@ -81,6 +87,7 @@ def _extract(kind_label: str, obj: dict) -> dict:
         "name": meta.get("name"),
         "namespace": namespace,
         "policy_name": policy_name,
+        "location_profile": location_profile,
         "state": status.get("state") or "",
         "timestamp": timestamp,
         "error_message": error_message,

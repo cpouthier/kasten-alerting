@@ -115,6 +115,8 @@ def _build_digest_text(items: list[dict]) -> str:
         lines.append(f"  Namespace: {item['namespace'] or 'n/a'}")
         if item["policy_name"]:
             lines.append(f"  Policy: {item['policy_name']}")
+        if item["location_profile"]:
+            lines.append(f"  Location Profile: {item['location_profile']}")
         lines.append(f"  When: {tz.format_local(item['timestamp']) or 'unknown'}")
         if item["error_lines"]:
             lines.append("  Log:")
@@ -128,6 +130,20 @@ def _build_digest_html(items: list[dict]) -> str:
     counts = _counts_by_status(items)
     summary = ", ".join(f"{n} {state}" for state, n in counts.items())
 
+    # Only added as a column when at least one item actually has one
+    # (mainly ExportAction/ImportAction) - an always-present, almost-always-
+    # empty column would just crowd the table on every ordinary digest.
+    show_profile_column = any(item["location_profile"] for item in items)
+    profile_header = (
+        f'<td style="padding:6px 10px;font-size:11px;color:{_MUTED};font-weight:700;text-transform:uppercase;">Location Profile</td>'
+        if show_profile_column else ""
+    )
+
+    def _profile_cell(item: dict) -> str:
+        if not show_profile_column:
+            return ""
+        return f'<td style="padding:8px 10px;border-bottom:1px solid {_BORDER};font-size:12px;color:{_MUTED};">{html.escape(item["location_profile"] or "—")}</td>'
+
     rows = "".join(f"""
         <tr>
           <td style="padding:8px 10px;border-bottom:1px solid {_BORDER};">{_status_pill(item['state'])}</td>
@@ -135,6 +151,7 @@ def _build_digest_html(items: list[dict]) -> str:
           <td style="padding:8px 10px;border-bottom:1px solid {_BORDER};font-size:12px;color:{_TEXT};font-family:ui-monospace,Consolas,monospace;">{html.escape(item['name'] or '')}</td>
           <td style="padding:8px 10px;border-bottom:1px solid {_BORDER};font-size:12px;color:{_MUTED};">{html.escape(item['policy_name'] or '—')}</td>
           <td style="padding:8px 10px;border-bottom:1px solid {_BORDER};font-size:12px;color:{_MUTED};font-family:ui-monospace,Consolas,monospace;">{html.escape(item['namespace'] or '—')}</td>
+          {_profile_cell(item)}
           <td style="padding:8px 10px;border-bottom:1px solid {_BORDER};font-size:11px;color:{_MUTED};white-space:nowrap;">{html.escape(tz.format_local(item['timestamp']))}</td>
         </tr>""" for item in items)
 
@@ -149,6 +166,7 @@ def _build_digest_html(items: list[dict]) -> str:
         <td style="padding:6px 10px;font-size:11px;color:{_MUTED};font-weight:700;text-transform:uppercase;">Action</td>
         <td style="padding:6px 10px;font-size:11px;color:{_MUTED};font-weight:700;text-transform:uppercase;">Policy</td>
         <td style="padding:6px 10px;font-size:11px;color:{_MUTED};font-weight:700;text-transform:uppercase;">Namespace</td>
+        {profile_header}
         <td style="padding:6px 10px;font-size:11px;color:{_MUTED};font-weight:700;text-transform:uppercase;">When</td>
       </tr>
       {rows}
