@@ -348,8 +348,14 @@ async function loadSettings() {
   document.getElementById('smtp-username').value = currentSettings.smtp_username || '';
   document.getElementById('from-address').value = currentSettings.from_address || '';
   document.getElementById('to-addresses').value = (currentSettings.to_addresses || []).join(', ');
-  document.getElementById('password-status').textContent = currentSettings.has_password
-    ? 'A password is currently set. Leave blank to keep it.' : 'No password set.';
+  updatePasswordStatus(currentSettings.has_password);
+}
+
+function updatePasswordStatus(hasPassword) {
+  const el = document.getElementById('password-status');
+  el.textContent = hasPassword ? 'A password is currently set. Leave blank to keep it.' : 'No password set.';
+  el.classList.toggle('ok', hasPassword);
+  el.classList.toggle('muted', !hasPassword);
 }
 
 function readForm() {
@@ -388,8 +394,7 @@ async function saveSettings(errorElId, statusElId) {
     }
     currentSettings = await res.json();
     passwordEl.value = '';
-    document.getElementById('password-status').textContent = currentSettings.has_password
-      ? 'A password is currently set. Leave blank to keep it.' : 'No password set.';
+    updatePasswordStatus(currentSettings.has_password);
     statusEl.textContent = 'Saved.';
     statusEl.style.display = 'block';
     setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
