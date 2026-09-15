@@ -202,6 +202,9 @@ td.mono{font-family:ui-monospace,'Cascadia Mono','Consolas',monospace;font-size:
     <label>Alert on status</label>
     <div class="status-checkboxes" id="statuses-grid"></div>
 
+    <label for="excluded-policies">Excluded policies (comma-separated policy names, never alerted on)</label>
+    <input type="text" id="excluded-policies" placeholder="e.g. k10-disaster-recovery-policy">
+
     <label for="poll-interval">Check every (seconds, minimum 60)</label>
     <input type="number" id="poll-interval" min="60" step="30" value="300">
 
@@ -336,6 +339,7 @@ async function loadSettings() {
     cb.checked = currentSettings.action_kinds.includes(cb.value);
   });
   renderStatuses(statuses, currentSettings.statuses);
+  document.getElementById('excluded-policies').value = (currentSettings.excluded_policies || []).join(', ');
   document.getElementById('poll-interval').value = currentSettings.poll_interval_seconds;
 
   document.getElementById('smtp-host').value = currentSettings.smtp_host || '';
@@ -353,6 +357,7 @@ function readForm() {
     enabled: document.getElementById('enabled-checkbox').checked,
     action_kinds: [...document.querySelectorAll('.action-kind-cb:checked')].map(cb => cb.value),
     statuses: [...document.querySelectorAll('.status-cb:checked')].map(cb => cb.value),
+    excluded_policies: document.getElementById('excluded-policies').value.split(',').map(s => s.trim()).filter(Boolean),
     poll_interval_seconds: parseInt(document.getElementById('poll-interval').value, 10) || 300,
     smtp_host: document.getElementById('smtp-host').value.trim(),
     smtp_port: parseInt(document.getElementById('smtp-port').value, 10) || 587,

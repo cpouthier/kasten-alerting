@@ -34,6 +34,7 @@ class AlertingSettingsRequest(BaseModel):
     enabled: bool = False
     action_kinds: list[str] = []
     statuses: list[str] = []
+    excluded_policies: list[str] = []
     poll_interval_seconds: int = 300
     smtp_host: str = ""
     smtp_port: int = 587
@@ -80,6 +81,7 @@ async def api_update_settings(body: AlertingSettingsRequest):
             enabled=body.enabled,
             action_kinds=body.action_kinds,
             statuses=body.statuses,
+            excluded_policies=body.excluded_policies,
             poll_interval_seconds=body.poll_interval_seconds,
             smtp_host=body.smtp_host,
             smtp_port=body.smtp_port,

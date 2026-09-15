@@ -88,7 +88,7 @@ def _extract(kind_label: str, obj: dict) -> dict:
     }
 
 
-async def _poll_kind(kind_cfg: dict, alert_statuses: set[str]) -> list[dict]:
+async def _poll_kind(kind_cfg: dict, alert_statuses: set[str], excluded_policies: set[str]) -> list[dict]:
     """Returns items newly discovered this cycle that match alert_statuses -
     empty during a kind's baseline pass, or whenever nothing new turned up."""
     kind_id, kind_label = kind_cfg["id"], kind_cfg["kind"]
@@ -109,8 +109,11 @@ async def _poll_kind(kind_cfg: dict, alert_statuses: set[str]) -> list[dict]:
         if db.is_seen(item["uid"]):
             continue
         db.mark_seen(item["uid"], kind_label, item["name"], item["namespace"], item["state"], now)
-        if not baselining and item["state"] in alert_statuses:
-            new_items.append(item)
+        if baselining or item["state"] not in alert_statuses:
+            continue
+        if item["policy_name"] and item["policy_name"] in excluded_policies:
+            continue
+        new_items.append(item)
 
     if baselining:
         db.mark_baselined(kind_id, now)
@@ -122,11 +125,12 @@ async def _poll_kind(kind_cfg: dict, alert_statuses: set[str]) -> list[dict]:
 async def run_once() -> None:
     cfg = settings.get_alerting()
     alert_statuses = set(cfg["statuses"])
+    excluded_policies = set(cfg.get("excluded_policies") or [])
     selected_kinds = [k10.ACTION_KIND_BY_ID[k] for k in cfg["action_kinds"] if k in k10.ACTION_KIND_BY_ID]
 
     all_new_items: list[dict] = []
     for kind_cfg in selected_kinds:
-        all_new_items.extend(await _poll_kind(kind_cfg, alert_statuses))
+        all_new_items.extend(await _poll_kind(kind_cfg, alert_statuses, excluded_policies))
 
     if not all_new_items:
         return

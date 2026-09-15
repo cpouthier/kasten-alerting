@@ -27,6 +27,13 @@ DEFAULT_ALERTING = {
     # default (alerting on every single success would be noisy), the other
     # three ("something didn't just finish normally") are on.
     "statuses": ["Failed", "Cancelled", "Skipped"],
+    # Policy names (k10.kasten.io/policyName) to never alert on, even if
+    # their actions otherwise match action_kinds/statuses above - e.g. a
+    # cluster's own k10-disaster-recovery-policy, whose BackupActions are
+    # routine self-backup noise for most people. Bookkeeping (seen_actions)
+    # still runs for these, same as a kind/status that isn't selected - see
+    # poller._poll_kind.
+    "excluded_policies": [],
     "poll_interval_seconds": 300,
     "smtp_host": "",
     "smtp_port": 587,
