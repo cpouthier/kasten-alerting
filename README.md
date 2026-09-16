@@ -225,3 +225,72 @@ namespaces and runs scanner pods), this app only ever reads Kasten action
 objects and manages its own two Secrets.
 
 ---
+
+## User Guide
+
+Everything below lives on the single Settings page (History is the other
+tab - one row per digest email actually sent, click a row to see every
+action it covered).
+
+### Monitoring
+
+![Alerting settings](docs/alertingsettings.png)
+
+- **Enabled** - the master switch for the digest email specifically (see
+  [What triggers an alert](#what-triggers-an-alert) above); SNMP has its
+  own independent toggle further down.
+- **Action kinds to monitor** - which of the 13 pollable Kasten action
+  kinds to watch. Backup/Restore/Export/Validate/Run are on by default;
+  the rest (mostly rarer, or in Retire's case very high-volume
+  housekeeping) are opt-in.
+- **Alert on status** - the shared status filter across every selected
+  kind (`Complete`/`Failed`/`Cancelled`/`Skipped`). Only `Failed` is on by
+  default.
+- **Excluded policies** - policy names to never alert on even if they'd
+  otherwise match, e.g. a cluster's own DR policy.
+- **Check every** - the poll interval in seconds (minimum 60). **Check
+  now** runs one cycle immediately, without waiting for the interval -
+  useful right after changing a setting.
+
+### Email (SMTP)
+
+![Email settings](docs/smtpconfig.png)
+
+Standard SMTP fields (host, port, STARTTLS/SSL/TLS/none, optional
+username), plus **From address** and **Recipients**. The password field
+is write-only - once saved, it's never shown again, only "A password is
+currently set" (in green, as above) or "No password set" until you type a
+new one. **Send test email** tries the form's *current* values (falling
+back to the already-saved password if you leave that field blank), so you
+can verify a config before committing to it with **Save**.
+
+### SNMP Traps and Maintenance
+
+![SNMP Traps and Maintenance settings](docs/snmpconfig.png)
+
+**SNMP Traps** - its own **Enabled** toggle, independent of the email
+one above. Set the **Receiver host**/**Port** (default `162`) and pick a
+**SNMP version**:
+- **v2c** just needs a **Community string**.
+- **v3** additionally asks for a username, an authentication protocol
+  (SHA/MD5/none) + password, and a privacy protocol (AES/DES/none) +
+  password - and, critically, shows **this app's own SNMPv3 Engine ID**,
+  which your NMS needs to be told in advance before it will accept an
+  authenticated trap at all (see [MIB.md](MIB.md) for exactly why - it's
+  a real SNMPv3 requirement for traps specifically, not a bug, and it's
+  easy to miss).
+
+All three password-type fields (community string, auth password, priv
+password) are write-only, same "currently set / not set" pattern as the
+SMTP password. **Send test trap** exercises the exact same code path as a
+real alert, against whatever's currently in the form.
+
+**Maintenance** - unrelated to alerting itself: the dedup bookkeeping
+that stops the same action from being alerted on twice only ever grows on
+its own, even for actions Kasten has since garbage-collected. This section
+lets you turn that cleanup on/off, set how often it runs (in days, weekly
+by default), trigger it on demand with **Clean up now**, and see the
+result of the last run (how many action kinds were checked, how many
+stale rows were removed, or the error if it failed). It only ever touches
+this internal bookkeeping - never the History tab's own record of alerts
+already sent.
