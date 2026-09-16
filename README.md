@@ -10,7 +10,7 @@ ExportAction, RunAction, and every other action kind Kasten exposes.
 
 Kasten explicitly disables `watch` on every `actions.kio.kasten.io` kind.
 
-So there's no event-driven alternative - this app periodically lists every
+So there's no event-driven alternative, this app periodically lists every
 selected action kind and diffs against what it's already seen. 
 The interval is configurable on the Settings page (minimum 60s).
 
@@ -34,18 +34,18 @@ status you've selected), just packaged differently:
   matching action, not one email per action, so an incident that fails
   many actions at once (a storage outage, say) can't flood your inbox.
   Each digest lists every action it covers: kind, action name, policy name
-  (when the action came from a policy - `k10.kasten.io/policyName`),
+  (when the action came from a policy `k10.kasten.io/policyName`),
   Location Profile (for ExportAction/ImportAction/BackupAction), namespace,
   timestamp, and, for anything that failed, the full error/cause chain
   Kasten recorded on the object itself (`status.error`).
-- **SNMP trap**: one `kastenActionAlertTrap` per action, not batched - an
+- **SNMP trap**: one `kastenActionAlertTrap` per action, not batched. An
   NMS is built to correlate a burst of these itself, unlike an inbox. See
   [MIB.md](MIB.md) for the full object reference, NMS import instructions,
   and prerequisites (including an SNMPv3-specific requirement that will
   silently break every trap if missed).
 
 Toggling either channel off in Settings doesn't stop the underlying
-polling/bookkeeping, only that channel's delivery - so nothing piles up
+polling/bookkeeping, only that channel's delivery,so nothing piles up
 into a flood the moment you turn it back on.
 
 ## Action kinds monitored
@@ -61,8 +61,8 @@ rarer or, in Retire's case, very high-volume housekeeping) are available
 to enable in Settings but off by default.
 
 Statuses: `Complete`, `Failed`, `Cancelled`, `Skipped` (one shared filter
-across every selected kind). Only `Failed` is on by default - the one
-unambiguous "something is actually wrong" outcome; `Cancelled`/`Skipped`
+across every selected kind). Only `Failed` is on by default, the one
+unambiguous "something went actually wrong" outcome; `Cancelled`/`Skipped`
 (usually a manual cancel, a policy skipping a namespace it
 already handled) and `Complete` (a full audit trail of successes too) are
 available to enable in Settings.
@@ -105,12 +105,12 @@ somewhere.
 ## Maintenance
 
 The dedup bookkeeping that keeps poller.py from alerting on the same
-action twice (`seen_actions`, see `app/db.py`) only ever grows on its own -
+action twice (`seen_actions`, see `app/db.py`) only ever grows on its own,
 even for actions Kasten itself has since garbage-collected (RunAction and
 RetireAction especially churn through thousands of objects over a
 cluster's lifetime). A background task reconciles it against what's
 actually still in the cluster and deletes rows for anything gone, weekly
-by default - configurable (interval in days) or triggerable on demand
+by default, configurable (interval in days) or triggerable on demand
 ("Clean up now") from the Settings page. This only ever touches internal
 deduplication state, never the History tab's own record of alerts sent.
 
@@ -177,12 +177,12 @@ helm upgrade --install kasten-alerting ./helm/kasten-alerting \
 
 ## RBAC
 
-Two separate objects, deliberately scoped as narrowly as each job allows -
+Two separate objects, deliberately scoped as narrowly as each job allows,
 see `helm/kasten-alerting/templates/{clusterrole,role}.yaml` for the exact
 YAML.
 
 **ClusterRole `kasten-alerting`** (cluster-scoped, bound cluster-wide via
-`ClusterRoleBinding`) - `get`/`list` only, on the 13 `actions.kio.kasten.io`
+`ClusterRoleBinding`), `get`/`list` only, on the 13 `actions.kio.kasten.io`
 kinds this app can poll:
 
 ```
@@ -193,7 +193,7 @@ retireactions, runactions, stageactions, upgradeactions, validateactions
 
 This has to be cluster-scoped: an action lives in whichever namespace its
 source application does (or has no namespace at all for the three
-cluster-scoped kinds - BackupClusterAction, RestoreClusterAction,
+cluster-scoped kinds, BackupClusterAction, RestoreClusterAction,
 RetireAction), not a fixed namespace this chart controls, and this app
 needs to see every one of them regardless of where they land. `get`/`list`
 only - this app only ever observes, it never creates, deletes, or modifies
@@ -220,8 +220,7 @@ are write-only end to end: the API never returns any of them once saved,
 only whether each is currently set (`has_password`, `snmp_credentials`).
 
 Nothing else is granted - no access to Pods, logs, ConfigMaps, or any
-other resource. Unlike malware-scan (which restores data into scratch
-namespaces and runs scanner pods), this app only ever reads Kasten action
+other resource. This app only ever reads Kasten action
 objects and manages its own two Secrets.
 
 ---
@@ -229,27 +228,27 @@ objects and manages its own two Secrets.
 ## User Guide
 
 Everything below lives on the single Settings page (History is the other
-tab - one row per digest email actually sent, click a row to see every
+tab, one row per digest email actually sent, click a row to see every
 action it covered).
 
 ### Monitoring
 
 ![Alerting settings](docs/alertingsettings.png)
 
-- **Enabled** - the master switch for the digest email specifically (see
+- **Enabled**: the master switch for the digest email specifically (see
   [What triggers an alert](#what-triggers-an-alert) above); SNMP has its
   own independent toggle further down.
-- **Action kinds to monitor** - which of the 13 pollable Kasten action
+- **Action kinds to monitor**: which of the 13 pollable Kasten action
   kinds to watch. Backup/Restore/Export/Validate/Run are on by default;
   the rest (mostly rarer, or in Retire's case very high-volume
   housekeeping) are opt-in.
-- **Alert on status** - the shared status filter across every selected
+- **Alert on status**: the shared status filter across every selected
   kind (`Complete`/`Failed`/`Cancelled`/`Skipped`). Only `Failed` is on by
   default.
-- **Excluded policies** - policy names to never alert on even if they'd
+- **Excluded policies**: policy names to never alert on even if they'd
   otherwise match, e.g. a cluster's own DR policy.
-- **Check every** - the poll interval in seconds (minimum 60). **Check
-  now** runs one cycle immediately, without waiting for the interval -
+- **Check every**: the poll interval in seconds (minimum 60). **Check
+  now** runs one cycle immediately, without waiting for the interval,
   useful right after changing a setting.
 
 ### Email (SMTP)
@@ -258,25 +257,25 @@ action it covered).
 
 Standard SMTP fields (host, port, STARTTLS/SSL/TLS/none, optional
 username), plus **From address** and **Recipients**. The password field
-is write-only - once saved, it's never shown again, only "A password is
+is write-only, once saved, it's never shown again, only "A password is
 currently set" (in green, as above) or "No password set" until you type a
 new one. **Send test email** tries the form's *current* values (falling
 back to the already-saved password if you leave that field blank), so you
 can verify a config before committing to it with **Save**.
 
-### SNMP Traps and Maintenance
+### SNMP Traps
 
-![SNMP Traps and Maintenance settings](docs/snmpconfig.png)
+![SNMP Traps](docs/snmpconfig.png)
 
-**SNMP Traps** - its own **Enabled** toggle, independent of the email
+**SNMP Traps**: its own **Enabled** toggle, independent of the email
 one above. Set the **Receiver host**/**Port** (default `162`) and pick a
 **SNMP version**:
 - **v2c** just needs a **Community string**.
 - **v3** additionally asks for a username, an authentication protocol
   (SHA/MD5/none) + password, and a privacy protocol (AES/DES/none) +
-  password - and, critically, shows **this app's own SNMPv3 Engine ID**,
+  password, and, critically, shows **this app's own SNMPv3 Engine ID**,
   which your NMS needs to be told in advance before it will accept an
-  authenticated trap at all (see [MIB.md](MIB.md) for exactly why - it's
+  authenticated trap at all (see [MIB.md](MIB.md) for exactly why. It's
   a real SNMPv3 requirement for traps specifically, not a bug, and it's
   easy to miss).
 
@@ -285,7 +284,11 @@ password) are write-only, same "currently set / not set" pattern as the
 SMTP password. **Send test trap** exercises the exact same code path as a
 real alert, against whatever's currently in the form.
 
-**Maintenance** - unrelated to alerting itself: the dedup bookkeeping
+### Maintenance
+
+![Maintenance](docs/maintenance.png)
+
+**Maintenance**: unrelated to alerting itself: the dedup bookkeeping
 that stops the same action from being alerted on twice only ever grows on
 its own, even for actions Kasten has since garbage-collected. This section
 lets you turn that cleanup on/off, set how often it runs (in days, weekly
