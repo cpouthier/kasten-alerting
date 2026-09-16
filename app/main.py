@@ -227,9 +227,19 @@ class MaintenanceSettingsRequest(BaseModel):
     interval_days: int = 7
 
 
+def _last_maintenance_run_view() -> dict | None:
+    # ran_at is stored as UTC (see db.py/maintenance.py) - converted to
+    # DISPLAY_TZ here, at the API boundary, same as the digest email/
+    # History tab already do.
+    run = db.last_maintenance_run()
+    if run is not None:
+        run["ran_at"] = tz.format_local(run["ran_at"])
+    return run
+
+
 @app.get("/api/maintenance")
 def api_get_maintenance():
-    return {**settings.get_maintenance(), "last_run": db.last_maintenance_run()}
+    return {**settings.get_maintenance(), "last_run": _last_maintenance_run_view()}
 
 
 @app.put("/api/maintenance")
@@ -238,7 +248,7 @@ def api_update_maintenance(body: MaintenanceSettingsRequest):
         cfg = settings.update_maintenance(enabled=body.enabled, interval_days=body.interval_days)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    return {**cfg, "last_run": db.last_maintenance_run()}
+    return {**cfg, "last_run": _last_maintenance_run_view()}
 
 
 @app.post("/api/maintenance/run-now")
@@ -247,7 +257,7 @@ async def api_maintenance_run_now():
     whether automatic maintenance is currently enabled, so it's always
     usable to clean up on demand or just to verify the feature works."""
     await maintenance.run_once()
-    return {"triggered": True, "last_run": db.last_maintenance_run()}
+    return {"triggered": True, "last_run": _last_maintenance_run_view()}
 
 
 @app.get("/api/digests")
